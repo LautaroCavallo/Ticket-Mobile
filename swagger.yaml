@@ -1,0 +1,1559 @@
+openapi: 3.0.3
+info:
+  title: Sistema de Tickets API
+  description: |
+    API REST para el sistema de gestión de tickets de soporte técnico.
+    
+    ## Autenticación
+    Esta API utiliza JWT (JSON Web Tokens) para la autenticación. 
+    - Incluye el token en el header `Authorization: Bearer <token>`
+    - Los tokens de acceso expiran en 1 hora
+    - Los tokens de refresh expiran en 30 días
+    
+    ## Roles de Usuario
+    - **user**: Usuario regular, puede crear tickets y comentarios
+    - **support**: Agente de resolución de tickets, puede ver los tickets asignados, cambiar sus estados ver y agregar archivos y comentarios.
+    - **sysAdmin**: Super administrador, acceso completo al sistema
+    
+    ## Rate Limiting
+    - Registro: 5 intentos por minuto
+    - Login: 10 intentos por minuto
+    - General: 1000 requests por minuto, 10000 por hora, 100000 por día
+  version: 1.0.0
+  contact:
+    name: Equipo de Desarrollo
+    email: dev@empresa.com
+servers:
+  - url: http://localhost:5000/api
+    description: Servidor de desarrollo
+  - url: https://api.empresa.com/api
+    description: Servidor de producción
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ===== AUTENTICACIÓN =====
+  /auth/register:
+    post:
+      tags:
+        - Autenticación
+      summary: Registrar nuevo usuario
+      description: Crea una nueva cuenta de usuario en el sistema
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+                - email
+                - password
+                - confirmPassword
+              properties:
+                firstName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  description: Nombre del usuario
+                  example: "Juan"
+                lastName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  description: Apellido del usuario
+                  example: "Pérez"
+                email:
+                  type: string
+                  format: email
+                  description: Correo electrónico único
+                  example: "juan.perez@empresa.com"
+                password:
+                  type: string
+                  minLength: 8
+                  description: Contraseña (mínimo 8 caracteres, debe incluir mayúsculas, minúsculas, números y símbolos)
+                  example: "MiPassword123!"
+                confirmPassword:
+                  type: string
+                  description: Confirmación de la contraseña
+                  example: "MiPassword123!"
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Usuario registrado exitosamente"
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Error en los datos de entrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit excedido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Autenticación
+      summary: Iniciar sesión
+      description: Autentica al usuario y retorna tokens JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "juan.perez@empresa.com"
+                password:
+                  type: string
+                  example: "MiPassword123!"
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: Token de acceso JWT
+                  refreshToken:
+                    type: string
+                    description: Token de refresh JWT
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Autenticación
+      summary: Renovar token de acceso
+      description: Genera un nuevo token de acceso usando el refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: Token de refresh válido
+      responses:
+        '200':
+          description: Token renovado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: Nuevo token de acceso
+        '401':
+          description: Refresh token inválido o expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Autenticación
+      summary: Cerrar sesión
+      description: Invalida el token actual
+      responses:
+        '200':
+          description: Logout exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Logout exitoso"
+
+  /auth/me:
+    get:
+      tags:
+        - Autenticación
+      summary: Obtener información del usuario actual
+      description: Retorna la información del usuario autenticado
+      responses:
+        '200':
+          description: Información del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # ===== TICKETS =====
+  /tickets:
+    get:
+      tags:
+        - Tickets
+      summary: Listar tickets
+      description: Obtiene la lista de tickets según el rol del usuario
+      parameters:
+        - name: status
+          in: query
+          description: Filtrar por estado
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, closed]
+        - name: priority
+          in: query
+          description: Filtrar por prioridad
+          schema:
+            type: string
+            enum: [low, medium, high, urgent]
+        - name: assigneeId
+          in: query
+          description: Filtrar por asignado
+          schema:
+            type: integer
+        - name: creatorId
+          in: query
+          description: Filtrar por creador
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de tickets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tickets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ticket'
+                  total:
+                    type: integer
+                    description: Total de tickets
+
+    post:
+      tags:
+        - Tickets
+      summary: Crear ticket
+      description: Crea un nuevo ticket de soporte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - priority
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                  description: Título del ticket
+                  example: "Error en el sistema de login"
+                description:
+                  type: string
+                  description: Descripción detallada del problema
+                  example: "El usuario no puede iniciar sesión con sus credenciales válidas"
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                  description: Prioridad del ticket
+                  example: "high"
+                assigneeId:
+                  type: integer
+                  description: ID del usuario asignado (opcional)
+                  example: 5
+      responses:
+        '201':
+          description: Ticket creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Ticket creado exitosamente"
+                  ticket:
+                    $ref: '#/components/schemas/Ticket'
+        '400':
+          description: Error en los datos de entrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{ticket_id}:
+    get:
+      tags:
+        - Tickets
+      summary: Obtener ticket por ID
+      description: Obtiene los detalles de un ticket específico
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: ID del ticket
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Detalles del ticket
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket:
+                    $ref: '#/components/schemas/Ticket'
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  attachments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+        '404':
+          description: Ticket no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Tickets
+      summary: Actualizar ticket
+      description: Actualiza un ticket existente
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: ID del ticket
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [open, in_progress, resolved, closed]
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                assigneeId:
+                  type: integer
+      responses:
+        '200':
+          description: Ticket actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Ticket actualizado exitosamente"
+                  ticket:
+                    $ref: '#/components/schemas/Ticket'
+        '403':
+          description: Sin permisos para actualizar el ticket
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{ticket_id}/comments:
+    get:
+      tags:
+        - Comentarios
+      summary: Obtener comentarios del ticket
+      description: Lista todos los comentarios de un ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: ID del ticket
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de comentarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+
+    post:
+      tags:
+        - Comentarios
+      summary: Agregar comentario
+      description: Agrega un comentario a un ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: ID del ticket
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: Contenido del comentario
+                  example: "He revisado el problema y encontré la causa..."
+                isPrivate:
+                  type: boolean
+                  description: Si el comentario es privado (solo admin)
+                  default: false
+      responses:
+        '201':
+          description: Comentario creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Comentario agregado exitosamente"
+                  comment:
+                    $ref: '#/components/schemas/Comment'
+
+  /tickets/{ticket_id}/comments/{comment_id}:
+    delete:
+      tags:
+        - Comentarios
+      summary: Eliminar comentario
+      description: Elimina un comentario (solo el autor o admin)
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: ID del ticket
+          schema:
+            type: integer
+        - name: comment_id
+          in: path
+          required: true
+          description: ID del comentario
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Comentario eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Comentario eliminado exitosamente"
+        '403':
+          description: Sin permisos para eliminar el comentario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tickets/{ticket_id}/attachments:
+    post:
+      tags:
+        - Archivos adjuntos
+      summary: Subir archivo adjunto
+      description: Sube un archivo adjunto a un ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: ID del ticket
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Archivo a subir
+                isPrivate:
+                  type: boolean
+                  description: Si el archivo es privado (solo admin)
+                  default: false
+      responses:
+        '201':
+          description: Archivo subido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Archivo subido exitosamente"
+                  attachment:
+                    $ref: '#/components/schemas/Attachment'
+
+    get:
+      tags:
+        - Archivos adjuntos
+      summary: Listar archivos adjuntos
+      description: Obtiene la lista de archivos adjuntos de un ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: ID del ticket
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de archivos adjuntos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attachments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+
+  /tickets/attachments/{attachment_id}:
+    get:
+      tags:
+        - Archivos adjuntos
+      summary: Descargar archivo adjunto
+      description: Descarga un archivo adjunto específico
+      parameters:
+        - name: attachment_id
+          in: path
+          required: true
+          description: ID del archivo adjunto
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Archivo descargado exitosamente
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Archivo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ===== USUARIOS =====
+  /users/profile:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener perfil del usuario actual
+      description: Obtiene la información del perfil del usuario autenticado
+      responses:
+        '200':
+          description: Información del perfil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar perfil
+      description: Actualiza la información del perfil del usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                lastName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Perfil actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Perfil actualizado exitosamente"
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /users/profile/picture:
+    post:
+      tags:
+        - Usuarios
+      summary: Subir foto de perfil
+      description: Sube una nueva foto de perfil para el usuario
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Imagen de perfil (JPG, PNG, GIF)
+      responses:
+        '200':
+          description: Foto de perfil actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Foto de perfil actualizada exitosamente"
+                  profilePicture:
+                    type: string
+                    description: URL de la nueva foto de perfil
+
+  /users/profile/password:
+    put:
+      tags:
+        - Usuarios
+      summary: Cambiar contraseña
+      description: Cambia la contraseña del usuario actual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+                - confirmPassword
+              properties:
+                currentPassword:
+                  type: string
+                  description: Contraseña actual
+                newPassword:
+                  type: string
+                  minLength: 8
+                  description: Nueva contraseña
+                confirmPassword:
+                  type: string
+                  description: Confirmación de la nueva contraseña
+      responses:
+        '200':
+          description: Contraseña actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Contraseña actualizada exitosamente"
+        '400':
+          description: Error en la validación de la contraseña
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users:
+    get:
+      tags:
+        - Usuarios
+      summary: Listar todos los usuarios
+      description: Obtiene la lista de todos los usuarios (solo sysAdmin)
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '403':
+          description: Sin permisos para acceder a esta información
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{user_id}:
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar usuario
+      description: Elimina un usuario del sistema (solo sysAdmin)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuario eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Usuario eliminado exitosamente"
+        '403':
+          description: Sin permisos para eliminar usuarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar información de usuario
+      description: Actualiza la información de un usuario (solo sysAdmin)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [user, support, observer, sysAdmin]
+      responses:
+        '200':
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Usuario actualizado exitosamente"
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /users/{user_id}/role:
+    put:
+      tags:
+        - Usuarios
+      summary: Cambiar rol de usuario
+      description: Cambia el rol de un usuario (solo sysAdmin)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: [user, support, observer, sysAdmin]
+                  description: Nuevo rol del usuario
+      responses:
+        '200':
+          description: Rol actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Rol actualizado exitosamente"
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /users/{user_id}/password:
+    put:
+      tags:
+        - Usuarios
+      summary: Cambiar contraseña de usuario
+      description: Cambia la contraseña de un usuario (solo sysAdmin)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newPassword
+                - confirmPassword
+              properties:
+                newPassword:
+                  type: string
+                  minLength: 8
+                  description: Nueva contraseña
+                confirmPassword:
+                  type: string
+                  description: Confirmación de la nueva contraseña
+      responses:
+        '200':
+          description: Contraseña actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Contraseña actualizada exitosamente"
+
+  # ===== ADMINISTRACIÓN =====
+  /admin/users:
+    get:
+      tags:
+        - Administración
+      summary: Obtener usuarios para administración
+      description: Obtiene la lista de usuarios con información administrativa
+      responses:
+        '200':
+          description: Lista de usuarios administrativa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /admin/users/{user_id}/role:
+    put:
+      tags:
+        - Administración
+      summary: Actualizar rol de usuario
+      description: Actualiza el rol de un usuario desde el panel administrativo
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: [user, support, observer, sysAdmin]
+      responses:
+        '200':
+          description: Rol actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Rol actualizado exitosamente"
+
+  /admin/users/{user_id}:
+    delete:
+      tags:
+        - Administración
+      summary: Eliminar usuario desde administración
+      description: Elimina un usuario desde el panel administrativo
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuario eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Usuario eliminado exitosamente"
+
+  /admin/stats:
+    get:
+      tags:
+        - Administración
+      summary: Obtener estadísticas del sistema
+      description: Obtiene estadísticas generales del sistema
+      responses:
+        '200':
+          description: Estadísticas del sistema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: integer
+                    description: Total de usuarios
+                  totalTickets:
+                    type: integer
+                    description: Total de tickets
+                  openTickets:
+                    type: integer
+                    description: Tickets abiertos
+                  resolvedTickets:
+                    type: integer
+                    description: Tickets resueltos
+                  totalComments:
+                    type: integer
+                    description: Total de comentarios
+
+  # ===== MÉTRICAS =====
+  /metrics/tickets/overview:
+    get:
+      tags:
+        - Métricas
+      summary: Resumen de tickets
+      description: Obtiene un resumen general de los tickets del sistema
+      responses:
+        '200':
+          description: Resumen de tickets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total de tickets
+                  byStatus:
+                    type: object
+                    properties:
+                      open:
+                        type: integer
+                      in_progress:
+                        type: integer
+                      resolved:
+                        type: integer
+                      closed:
+                        type: integer
+                  byPriority:
+                    type: object
+                    properties:
+                      low:
+                        type: integer
+                      medium:
+                        type: integer
+                      high:
+                        type: integer
+                      urgent:
+                        type: integer
+
+  /metrics/tickets/performance:
+    get:
+      tags:
+        - Métricas
+      summary: Métricas de rendimiento
+      description: Obtiene métricas de rendimiento del sistema de tickets
+      responses:
+        '200':
+          description: Métricas de rendimiento
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  averageResolutionTime:
+                    type: number
+                    description: Tiempo promedio de resolución en horas
+                  ticketsResolvedToday:
+                    type: integer
+                    description: Tickets resueltos hoy
+                  ticketsCreatedToday:
+                    type: integer
+                    description: Tickets creados hoy
+
+  /metrics/users/activity:
+    get:
+      tags:
+        - Métricas
+      summary: Actividad de usuarios
+      description: Obtiene métricas de actividad de los usuarios
+      responses:
+        '200':
+          description: Métricas de actividad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activeUsers:
+                    type: integer
+                    description: Usuarios activos en los últimos 7 días
+                  newUsersThisMonth:
+                    type: integer
+                    description: Nuevos usuarios este mes
+                  topContributors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: integer
+                        userName:
+                          type: string
+                        ticketsCreated:
+                          type: integer
+                        commentsPosted:
+                          type: integer
+
+  /metrics/comments/overview:
+    get:
+      tags:
+        - Métricas
+      summary: Resumen de comentarios
+      description: Obtiene un resumen de los comentarios del sistema
+      responses:
+        '200':
+          description: Resumen de comentarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total de comentarios
+                  commentsToday:
+                    type: integer
+                    description: Comentarios creados hoy
+                  averagePerTicket:
+                    type: number
+                    description: Promedio de comentarios por ticket
+
+  # ===== SALUD DEL SISTEMA =====
+  /health:
+    get:
+      tags:
+        - Sistema
+      summary: Verificar salud del sistema
+      description: Verifica que el sistema esté funcionando correctamente
+      security: []
+      responses:
+        '200':
+          description: Sistema funcionando correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: Timestamp de la verificación
+
+  /categorias:
+    get:
+      tags:
+        - Categorías
+      summary: Listar categorías
+      description: Obtiene todas las categorías disponibles
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categorias:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Categoria'
+
+    post:
+      tags:
+        - Categorías
+      summary: Crear categoría
+      description: Crea una nueva categoría de tickets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaInput'
+      responses:
+        '201':
+          description: Categoría creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Categoría creada exitosamente"
+                  categoria:
+                    $ref: '#/components/schemas/Categoria'
+
+  /categorias/{categoria_id}:
+    get:
+      tags:
+        - Categorías
+      summary: Obtener categoría
+      description: Devuelve una categoría por su ID
+      parameters:
+        - name: categoria_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Categoría encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categoria'
+        '404':
+          description: Categoría no encontrada
+
+    put:
+      tags:
+        - Categorías
+      summary: Actualizar categoría
+      description: Modifica una categoría existente
+      parameters:
+        - name: categoria_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaInput'
+      responses:
+        '200':
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categoria'
+
+    delete:
+      tags:
+        - Categorías
+      summary: Eliminar categoría
+      description: Elimina una categoría existente
+      parameters:
+        - name: categoria_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Categoría eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Categoría eliminada exitosamente"
+        '404':
+          description: Categoría no encontrada
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT obtenido del endpoint de login.
+        Formato: `Authorization: Bearer <token>`
+
+  schemas:
+    Categoria:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único de la categoría
+          example: 1
+        nombre:
+          type: string
+          description: Nombre de la categoría
+          example: "Hardware"
+        descripcion:
+          type: string
+          description: Descripción de la categoría
+          example: "Problemas relacionados con hardware"
+    CategoriaInput:
+      type: object
+      required:
+        - nombre
+      properties:
+        nombre:
+          type: string
+          description: Nombre de la categoría
+          example: "Software"
+        descripcion:
+          type: string
+          description: Descripción de la categoría
+          example: "Errores o consultas relacionadas con software"
+
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del usuario
+          example: 1
+        firstName:
+          type: string
+          description: Nombre del usuario
+          example: "Juan"
+        lastName:
+          type: string
+          description: Apellido del usuario
+          example: "Pérez"
+        email:
+          type: string
+          format: email
+          description: Correo electrónico
+          example: "juan.perez@empresa.com"
+        role:
+          type: string
+          enum: [user, support, observer, sysAdmin]
+          description: Rol del usuario en el sistema
+          example: "user"
+        profilePicture:
+          type: string
+          format: uri
+          description: URL de la foto de perfil
+          example: "http://localhost:5000/static/uploads/profiles/profile_1.jpg"
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación de la cuenta
+          example: "2025-01-15T10:30:00Z"
+        lastLogin:
+          type: string
+          format: date-time
+          description: Último inicio de sesión
+          example: "2025-01-15T14:20:00Z"
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del ticket
+          example: 1
+        title:
+          type: string
+          description: Título del ticket
+          example: "Error en el sistema de login"
+        description:
+          type: string
+          description: Descripción detallada del problema
+          example: "El usuario no puede iniciar sesión con sus credenciales válidas"
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          description: Estado actual del ticket
+          example: "open"
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+          description: Prioridad del ticket
+          example: "high"
+        creatorId:
+          type: integer
+          description: ID del usuario que creó el ticket
+          example: 1
+        assigneeId:
+          type: integer
+          description: ID del usuario asignado al ticket
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación del ticket
+          example: "2025-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha de última actualización
+          example: "2025-01-15T14:20:00Z"
+        resolvedAt:
+          type: string
+          format: date-time
+          description: Fecha de resolución del ticket
+          example: "2025-01-15T16:45:00Z"
+        creator:
+          $ref: '#/components/schemas/User'
+        assignee:
+          $ref: '#/components/schemas/User'
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del comentario
+          example: 1
+        text:
+          type: string
+          description: Contenido del comentario
+          example: "He revisado el problema y encontré la causa..."
+        userId:
+          type: integer
+          description: ID del usuario que escribió el comentario
+          example: 2
+        ticketId:
+          type: integer
+          description: ID del ticket al que pertenece el comentario
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación del comentario
+          example: "2025-01-15T11:15:00Z"
+        isPrivate:
+          type: boolean
+          description: Si el comentario es privado (solo visible para admins)
+          example: false
+        author:
+          $ref: '#/components/schemas/User'
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del archivo adjunto
+          example: 1
+        filename:
+          type: string
+          description: Nombre original del archivo
+          example: "screenshot_error.png"
+        originalFilename:
+          type: string
+          description: Nombre original del archivo
+          example: "screenshot_error.png"
+        fileSize:
+          type: integer
+          description: Tamaño del archivo en bytes
+          example: 1024000
+        mimeType:
+          type: string
+          description: Tipo MIME del archivo
+          example: "image/png"
+        ticketId:
+          type: integer
+          description: ID del ticket al que pertenece el archivo
+          example: 1
+        userId:
+          type: integer
+          description: ID del usuario que subió el archivo
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de subida del archivo
+          example: "2025-01-15T11:30:00Z"
+        isPrivate:
+          type: boolean
+          description: Si el archivo es privado (solo visible para admins)
+          example: false
+
+    ErrorResponse:
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Mensaje de error descriptivo
+          example: "Email y contraseña requeridos"
+        error:
+          type: string
+          description: Tipo de error (opcional)
+          example: "VALIDATION_ERROR"
+        details:
+          type: object
+          description: Detalles adicionales del error (opcional)
+          example: {"field": "email", "code": "INVALID_FORMAT"}
+
+    ValidationError:
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Mensaje de validación
+          example: "El formato del email es inválido"
+        field:
+          type: string
+          description: Campo que falló la validación
+          example: "email"
+        value:
+          type: string
+          description: Valor que falló la validación
+          example: "email-invalido"
+
+tags:
+  - name: Autenticación
+    description: Endpoints relacionados con autenticación y autorización
+  - name: Tickets
+    description: Gestión de tickets de soporte
+  - name: Comentarios
+    description: Comentarios en tickets
+  - name: Archivos adjuntos
+    description: Gestión de archivos adjuntos
+  - name: Usuarios
+    description: Gestión de perfiles de usuario
+  - name: Administración
+    description: Funciones administrativas del sistema
+  - name: Métricas
+    description: Métricas y estadísticas del sistema
+  - name: Sistema
+    description: Endpoints del sistema y monitoreo

@@ -169,11 +169,3 @@ jobs:
           echo "SonarCloud token not configured, skipping analysis"
         fi
       continue-on-error: true
-
-# Notificaciones (opcional)
-notifications:
-  webhooks:
-    on-success: never
-    on-failure: always
-    on-start: never
-    on-cancel: never

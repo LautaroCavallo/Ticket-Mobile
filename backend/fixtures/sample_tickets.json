@@ -1,0 +1,82 @@
+[
+  {
+    "model": "tickets.ticket",
+    "pk": 1,
+    "fields": {
+      "title": "Error en el sistema de login",
+      "description": "El usuario no puede iniciar sesión con sus credenciales válidas. Aparece un mensaje de error 'Credenciales inválidas' aunque la contraseña sea correcta.",
+      "status": "open",
+      "priority": "high",
+      "creator": 3,
+      "assignee": 2,
+      "categoria": 2,
+      "created_at": "2025-01-15T10:30:00Z",
+      "updated_at": "2025-01-15T10:30:00Z",
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "tickets.ticket",
+    "pk": 2,
+    "fields": {
+      "title": "PC sin acceso a internet",
+      "description": "La computadora de la guardia no tiene acceso a internet. El cable de red parece estar conectado pero no hay conectividad.",
+      "status": "in_progress",
+      "priority": "urgent",
+      "creator": 3,
+      "assignee": 2,
+      "categoria": 3,
+      "created_at": "2025-01-15T11:15:00Z",
+      "updated_at": "2025-01-15T14:20:00Z",
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "tickets.ticket",
+    "pk": 3,
+    "fields": {
+      "title": "Solicitud de nuevo usuario",
+      "description": "Se requiere crear un nuevo usuario para el área de pediatría. Necesita acceso a los sistemas hospitalarios básicos.",
+      "status": "resolved",
+      "priority": "medium",
+      "creator": 2,
+      "assignee": 2,
+      "categoria": 4,
+      "created_at": "2025-01-15T09:00:00Z",
+      "updated_at": "2025-01-15T16:45:00Z",
+      "resolved_at": "2025-01-15T16:45:00Z"
+    }
+  },
+  {
+    "model": "tickets.ticket",
+    "pk": 4,
+    "fields": {
+      "title": "Impresora no funciona",
+      "description": "La impresora del consultorio 5 no está imprimiendo. Se escucha que intenta imprimir pero no sale nada en el papel.",
+      "status": "open",
+      "priority": "medium",
+      "creator": 3,
+      "assignee": null,
+      "categoria": 1,
+      "created_at": "2025-01-15T15:30:00Z",
+      "updated_at": "2025-01-15T15:30:00Z",
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "tickets.ticket",
+    "pk": 5,
+    "fields": {
+      "title": "Sistema lento",
+      "description": "El sistema de gestión hospitalaria está funcionando muy lento. Las consultas de pacientes tardan varios minutos en cargar.",
+      "status": "open",
+      "priority": "high",
+      "creator": 3,
+      "assignee": null,
+      "categoria": 2,
+      "created_at": "2025-01-15T16:00:00Z",
+      "updated_at": "2025-01-15T16:00:00Z",
+      "resolved_at": null
+    }
+  }
+]

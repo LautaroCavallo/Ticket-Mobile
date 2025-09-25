@@ -59,11 +59,13 @@ chore: actualizar dependencias del backend
 ---
 
 ## Estrategia de ramas
-- **main**: rama estable.  
-- **feature/***: nuevas features → `feature/api-categorias`  
-- **fix/***: hotfixes/bugs → `fix/login-null-pointer`  
-- **docs/***: documentación → `docs/readme-h1`  
-- **ci/***: pipelines → `ci/actions-build`
+- **main**: rama estable.
+- **docs**: rama para documentación inicial  
+-**issue/#{número}-{descripcion-corta}**: cada issue crea su propia rama.
+
+--Ejemplo: issue/23-fix-login-null-pointer
+
+--Ejemplo: issue/45-api-categorias
 
 **Regla práctica:** abrir **Pull Requests** hacia `main`.  
 Preferir **Squash & merge** para mantener un historial limpio.

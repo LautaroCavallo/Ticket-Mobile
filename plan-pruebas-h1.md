@@ -1,4 +1,4 @@
-# Plan de Pruebas H1 - Sistema de Gestión de Tickets
+# Plan de Pruebas H1 - Sistema de Gestión de Tickets 
 
 ## 1. Pruebas Unitarias
 Se enfocan en validar componentes individuales de la aplicación (funciones, controladores, modelos de datos).

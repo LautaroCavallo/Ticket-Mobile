@@ -50,10 +50,14 @@ El sistema incluye:
 ---
 
 ## Organización del Repo
-- `/docs` → Documentación (DER, plan de pruebas, diagramas, etc.)  
-- `/frontend` → App Android  
-- `/backend` → Lógica y persistencia  
-- `/api` → Especificación OpenAPI (swagger.yaml)  
+- `/docs` → Documentación del proyecto (arquitectura, DER, plan de pruebas, métricas, justificaciones).
+- `/frontend` → Aplicación Android (Kotlin).
+- `/backend` → Lógica de negocio, persistencia y tests.
+- `/api` → Especificación OpenAPI (`swagger.yaml`) y ejemplos de requests/responses.
+- `/config` → Configuración de herramientas (ej: `detekt-config.yml`, linters, formateadores).
+- `/db` → Scripts de base de datos (`schema_h1.sql`, `seeds_h1.sql`, `queries_h1.sql`).
+- `/scripts` → Scripts auxiliares para CI/CD o automatización (`setup-ci.sh`, etc.).
+- `/.github/workflows` → Pipelines de integración y despliegue (ej: `ci.yml`).
 
 ---
 

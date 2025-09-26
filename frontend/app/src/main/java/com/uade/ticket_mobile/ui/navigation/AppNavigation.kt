@@ -16,6 +16,11 @@ import com.uade.ticket_mobile.ui.screens.TicketListScreen
 import com.uade.ticket_mobile.ui.screens.CreateTicketScreen
 import com.uade.ticket_mobile.ui.screens.ProfileScreen
 import com.uade.ticket_mobile.ui.screens.ChangePasswordScreen
+import com.uade.ticket_mobile.ui.screens.AdminHomeScreen
+import com.uade.ticket_mobile.ui.screens.UserManagementScreen
+import com.uade.ticket_mobile.ui.screens.StatisticsScreen
+import com.uade.ticket_mobile.ui.screens.TicketDetailsScreen
+import com.uade.ticket_mobile.ui.screens.EditTicketScreen
 import com.uade.ticket_mobile.ui.viewmodel.TicketViewModel
 
 @Composable
@@ -87,21 +92,49 @@ fun AppNavigation(
         }
         
         composable("ticket_list") {
-            TicketListScreen(
-                viewModel = viewModel,
-                onCreateTicket = {
-                    navController.navigate("create_ticket")
-                },
-                onNavigateToProfile = {
-                    navController.navigate("profile")
-                },
-                onLogout = {
-                    viewModel.logout()
-                    navController.navigate("login") {
-                        popUpTo("ticket_list") { inclusive = true }
+            val currentUser by viewModel.currentUser.collectAsState()
+            
+            if (currentUser?.isStaff == true) {
+                // Mostrar pantalla de admin si es staff
+                AdminHomeScreen(
+                    viewModel = viewModel,
+                    onNavigateToUserManagement = {
+                        navController.navigate("user_management")
+                    },
+                    onNavigateToStatistics = {
+                        navController.navigate("statistics")
+                    },
+                    onNavigateToProfile = {
+                        navController.navigate("profile")
+                    },
+                    onTicketClick = { ticket ->
+                        navController.navigate("ticket_details/${ticket.id}")
+                    },
+                    onLogout = {
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo("ticket_list") { inclusive = true }
+                        }
                     }
-                }
-            )
+                )
+            } else {
+                // Mostrar pantalla normal de usuario
+                TicketListScreen(
+                    viewModel = viewModel,
+                    onCreateTicket = {
+                        navController.navigate("create_ticket")
+                    },
+                    onNavigateToProfile = {
+                        navController.navigate("profile")
+                    },
+                    onLogout = {
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo("ticket_list") { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
         
         composable("create_ticket") {
@@ -135,6 +168,56 @@ fun AppNavigation(
                     navController.popBackStack()
                 },
                 onPasswordChanged = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Rutas de administrador
+        composable("user_management") {
+            UserManagementScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("statistics") {
+            StatisticsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("ticket_details/{ticketId}") { backStackEntry ->
+            val ticketId = backStackEntry.arguments?.getString("ticketId")?.toIntOrNull() ?: 1
+            val tickets by viewModel.tickets.collectAsState()
+            val ticket = tickets.find { it.id == ticketId } ?: tickets.first()
+            
+            TicketDetailsScreen(
+                ticket = ticket,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onEditTicket = { ticketToEdit ->
+                    navController.navigate("edit_ticket/${ticketToEdit.id}")
+                }
+            )
+        }
+        
+        composable("edit_ticket/{ticketId}") { backStackEntry ->
+            val ticketId = backStackEntry.arguments?.getString("ticketId")?.toIntOrNull() ?: 1
+            val tickets by viewModel.tickets.collectAsState()
+            val ticket = tickets.find { it.id == ticketId } ?: tickets.first()
+            
+            EditTicketScreen(
+                ticket = ticket,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onSaveChanges = { updatedTicket ->
+                    // TODO: Implementar actualización del ticket en el ViewModel
                     navController.popBackStack()
                 }
             )

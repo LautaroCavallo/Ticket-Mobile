@@ -64,14 +64,30 @@ fun MockInfoScreen(
                 )
                 
                 Text(
-                    text = "Email: usuario@test.com\nContraseña: 123456",
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "👤 Usuario Normal:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
                 
                 Text(
-                    text = "Email: admin@test.com\nContraseña: admin123",
+                    text = "Email: usuario@test.com\nContraseña: 123456",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                
+                Text(
+                    text = "👨‍💼 Administrador:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                
+                Text(
+                    text = "Email: admin@test.com\nContraseña: admin123\n(Acceso a gestión de usuarios y estadísticas)",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -100,10 +116,13 @@ fun MockInfoScreen(
                 
                 val features = listOf(
                     "• Autenticación completa (Login, Registro, Recuperación)",
-                    "• Gestión de tickets con filtros",
-                    "• Creación de nuevos tickets",
-                    "• Gestión de perfil de usuario",
-                    "• Cambio de contraseña",
+                    "• Pantallas de Usuario y Administrador",
+                    "• Gestión de tickets con filtros por estado",
+                    "• Creación y edición de tickets",
+                    "• Gestión de usuarios (solo Admin)",
+                    "• Dashboard con estadísticas y gráficos",
+                    "• Detalles de tickets con comentarios",
+                    "• Gestión de perfil y cambio de contraseña",
                     "• Navegación completa entre pantallas",
                     "• Datos simulados (sin backend)"
                 )

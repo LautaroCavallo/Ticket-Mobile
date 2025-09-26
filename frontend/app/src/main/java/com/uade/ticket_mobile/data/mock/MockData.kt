@@ -157,4 +157,96 @@ object MockData {
     fun getTicketsForCanceled(): List<Ticket> {
         return mockTickets.filter { it.status == TicketStatus.CLOSED }
     }
+    
+    fun getUnassignedTickets(): List<Ticket> {
+        return mockTickets.filter { it.assignee == null }
+    }
+    
+    // Usuarios adicionales para gestión de admin
+    val allUsers = listOf(
+        mockUser,
+        mockAdminUser,
+        User(
+            id = 3,
+            username = "maria.garcia@test.com",
+            email = "maria.garcia@test.com",
+            firstName = "María",
+            lastName = "García",
+            isStaff = true,
+            isSuperuser = false
+        ),
+        User(
+            id = 4,
+            username = "laura.sola@test.com",
+            email = "laura.sola@test.com",
+            firstName = "Laura",
+            lastName = "Sola",
+            isStaff = false,
+            isSuperuser = false
+        )
+    )
+    
+    // Comentarios mock para tickets
+    data class TicketComment(
+        val id: Int,
+        val ticketId: Int,
+        val author: User,
+        val content: String,
+        val isPrivate: Boolean,
+        val createdAt: String
+    )
+    
+    val mockComments = listOf(
+        TicketComment(
+            id = 1,
+            ticketId = 1,
+            author = mockAdminUser,
+            content = "He revisado el ticket y estoy trabajando en la solución.",
+            isPrivate = false,
+            createdAt = "2024-03-23T11:00:00Z"
+        ),
+        TicketComment(
+            id = 2,
+            ticketId = 1,
+            author = mockUser,
+            content = "Gracias por la respuesta. ¿Hay algún tiempo estimado?",
+            isPrivate = false,
+            createdAt = "2024-03-23T11:30:00Z"
+        ),
+        TicketComment(
+            id = 3,
+            ticketId = 1,
+            author = mockAdminUser,
+            content = "Nota interna: Revisar configuración del servidor de email",
+            isPrivate = true,
+            createdAt = "2024-03-23T12:00:00Z"
+        )
+    )
+    
+    // Estadísticas mock
+    data class TicketStatistics(
+        val totalTickets: Int,
+        val openTickets: Int,
+        val inProgressTickets: Int,
+        val resolvedTickets: Int,
+        val closedTickets: Int,
+        val highPriorityTickets: Int,
+        val mediumPriorityTickets: Int,
+        val lowPriorityTickets: Int,
+        val urgentPriorityTickets: Int
+    )
+    
+    fun getTicketStatistics(): TicketStatistics {
+        return TicketStatistics(
+            totalTickets = mockTickets.size,
+            openTickets = mockTickets.count { it.status == TicketStatus.OPEN },
+            inProgressTickets = mockTickets.count { it.status == TicketStatus.IN_PROGRESS },
+            resolvedTickets = mockTickets.count { it.status == TicketStatus.RESOLVED },
+            closedTickets = mockTickets.count { it.status == TicketStatus.CLOSED },
+            highPriorityTickets = mockTickets.count { it.priority == TicketPriority.HIGH },
+            mediumPriorityTickets = mockTickets.count { it.priority == TicketPriority.MEDIUM },
+            lowPriorityTickets = mockTickets.count { it.priority == TicketPriority.LOW },
+            urgentPriorityTickets = mockTickets.count { it.priority == TicketPriority.URGENT }
+        )
+    }
 }

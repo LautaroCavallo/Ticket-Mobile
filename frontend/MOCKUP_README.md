@@ -43,14 +43,24 @@ Esta aplicación Android es un mockup completamente funcional de una aplicación
 
 ## 📱 **Pantallas Implementadas**
 
-1. **MockInfoScreen** - Información del demo
+### 🔐 **Autenticación**
+1. **MockInfoScreen** - Información del demo con credenciales
 2. **LoginScreen** - Pantalla de inicio de sesión
 3. **RegisterScreen** - Registro de usuarios
 4. **ForgotPasswordScreen** - Recuperación de contraseña
-5. **TicketListScreen** - Lista de tickets con filtros
-6. **CreateTicketScreen** - Creación de tickets
+
+### 👤 **Usuario Normal**
+5. **TicketListScreen** - Lista de tickets con filtros por estado
+6. **CreateTicketScreen** - Creación de nuevos tickets
 7. **ProfileScreen** - Perfil del usuario
 8. **ChangePasswordScreen** - Cambio de contraseña
+
+### 👨‍💼 **Administrador**
+9. **AdminHomeScreen** - Dashboard principal con tickets sin asignar
+10. **UserManagementScreen** - Gestión completa de usuarios
+11. **StatisticsScreen** - Dashboard con estadísticas y gráficos
+12. **TicketDetailsScreen** - Vista detallada con comentarios y archivos
+13. **EditTicketScreen** - Edición completa de tickets
 
 ## 🛠 **Arquitectura Técnica**
 

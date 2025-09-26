@@ -10,11 +10,29 @@ interface ApiService {
     @POST("auth/login/")
     suspend fun login(@Body request: UserLoginRequest): Response<UserLoginResponse>
     
+    @POST("auth/register/")
+    suspend fun register(@Body request: UserRegisterRequest): Response<UserLoginResponse>
+    
+    @POST("auth/password-reset/")
+    suspend fun requestPasswordReset(@Body request: PasswordResetRequest): Response<Unit>
+    
     @POST("auth/refresh/")
     suspend fun refreshToken(@Body refresh: String): Response<TokenResponse>
     
     @GET("auth/user/")
     suspend fun getCurrentUser(@Header("Authorization") token: String): Response<User>
+    
+    @PUT("auth/user/")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body request: UpdateProfileRequest
+    ): Response<User>
+    
+    @POST("auth/change-password/")
+    suspend fun changePassword(
+        @Header("Authorization") token: String,
+        @Body request: ChangePasswordRequest
+    ): Response<Unit>
     
     // Tickets
     @GET("tickets/")

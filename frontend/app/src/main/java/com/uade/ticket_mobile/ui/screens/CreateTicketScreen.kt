@@ -3,6 +3,7 @@ package com.uade.ticket_mobile.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -11,8 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uade.ticket_mobile.data.models.TicketCategory
 import com.uade.ticket_mobile.data.models.TicketPriority
@@ -66,27 +69,101 @@ fun CreateTicketScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Título del ticket
+            // Título
+            Text(
+                text = "Titulo",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Título del ticket") },
-                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Password reset not working") },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 singleLine = true,
-                isError = title.isBlank() && uiState.error != null
+                isError = title.isBlank() && uiState.error != null,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
+                )
             )
             
-            // Descripción del ticket
+            // Area
+            Text(
+                text = "Area",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            OutlinedTextField(
+                value = selectedCategory?.name ?: "RRHH",
+                onValueChange = { },
+                placeholder = { Text("RRHH") },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                singleLine = true,
+                enabled = false, // Por ahora deshabilitado
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
+                )
+            )
+            
+            // Descripción
+            Text(
+                text = "Descripcion",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Descripción") },
+                placeholder = { Text("Can't reset my password :(") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
+                    .height(120.dp)
+                    .padding(bottom = 16.dp),
                 maxLines = 5,
-                isError = description.isBlank() && uiState.error != null
+                isError = description.isBlank() && uiState.error != null,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
+                )
             )
+            
+            // Subir imagen
+            Text(
+                text = "Subir imagen",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Botón para subir imagen (placeholder)
+            OutlinedButton(
+                onClick = { /* TODO: Implementar subida de imagen */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .padding(bottom = 16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Text(
+                    text = "+",
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             
             // Prioridad
             Text(
@@ -125,6 +202,8 @@ fun CreateTicketScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // Botón de crear
             Button(
                 onClick = {
@@ -138,7 +217,10 @@ fun CreateTicketScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                enabled = !uiState.isLoading && title.isNotBlank() && description.isNotBlank()
+                enabled = !uiState.isLoading && title.isNotBlank() && description.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
@@ -146,7 +228,11 @@ fun CreateTicketScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Crear Ticket")
+                    Text(
+                        text = "Crear",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
             

@@ -11,6 +11,36 @@ class TicketRepository {
         return apiService.login(UserLoginRequest(username, password))
     }
     
+    suspend fun register(firstName: String, lastName: String, email: String, password: String): Response<UserLoginResponse> {
+        return apiService.register(
+            UserRegisterRequest(
+                username = email,
+                email = email,
+                password = password,
+                firstName = firstName,
+                lastName = lastName
+            )
+        )
+    }
+    
+    suspend fun requestPasswordReset(email: String): Response<Unit> {
+        return apiService.requestPasswordReset(PasswordResetRequest(email))
+    }
+    
+    suspend fun updateProfile(token: String, firstName: String, lastName: String, email: String): Response<User> {
+        return apiService.updateProfile(
+            "Bearer $token",
+            UpdateProfileRequest(firstName, lastName, email)
+        )
+    }
+    
+    suspend fun changePassword(token: String, currentPassword: String, newPassword: String): Response<Unit> {
+        return apiService.changePassword(
+            "Bearer $token",
+            ChangePasswordRequest(currentPassword, newPassword)
+        )
+    }
+    
     suspend fun getCurrentUser(token: String): Response<User> {
         return apiService.getCurrentUser("Bearer $token")
     }

@@ -26,3 +26,32 @@ data class UserLoginResponse(
     val refresh: String,
     val user: User
 )
+
+data class UserRegisterRequest(
+    val username: String,
+    val email: String,
+    val password: String,
+    @SerializedName("first_name")
+    val firstName: String,
+    @SerializedName("last_name")
+    val lastName: String
+)
+
+data class PasswordResetRequest(
+    val email: String
+)
+
+data class UpdateProfileRequest(
+    @SerializedName("first_name")
+    val firstName: String,
+    @SerializedName("last_name")
+    val lastName: String,
+    val email: String
+)
+
+data class ChangePasswordRequest(
+    @SerializedName("old_password")
+    val oldPassword: String,
+    @SerializedName("new_password")
+    val newPassword: String
+)

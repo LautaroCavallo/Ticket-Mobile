@@ -45,7 +45,7 @@ fun AdminHomeScreen(
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
     
-    val tabTitles = listOf("Asignar", "Pendientes", "Completados", "Cancelados")
+    val tabTitles = listOf("Pendientes", "Completados", "Cancelados")
     
     LaunchedEffect(Unit) {
         viewModel.loadTickets()
@@ -54,7 +54,7 @@ fun AdminHomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Home Admin- Sin asignar") },
+                title = { Text("Home Admin") },
                 navigationIcon = {
                     IconButton(onClick = { showMenu = !showMenu }) {
                         Icon(Icons.Default.Menu, contentDescription = "Menu")
@@ -79,26 +79,14 @@ fun AdminHomeScreen(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Vista Observador y Usuario actual
+                // Usuario actual
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = "Vista",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Vista Observador",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-                    
                     // Avatar y nombre del admin
                     Box(
                         modifier = Modifier
@@ -122,7 +110,7 @@ fun AdminHomeScreen(
                     )
                 }
                 
-                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                 
                 // Tabs para filtrar por estado
                 TabRow(
@@ -138,9 +126,8 @@ fun AdminHomeScreen(
                                 .background(
                                     when (index) {
                                         0 -> if (selectedTabIndex == 0) AccentOrange.copy(alpha = 0.1f) else Color.Transparent
-                                        1 -> if (selectedTabIndex == 1) AccentOrange.copy(alpha = 0.1f) else Color.Transparent
-                                        2 -> if (selectedTabIndex == 2) SuccessGreen.copy(alpha = 0.1f) else Color.Transparent
-                                        3 -> if (selectedTabIndex == 3) ErrorRed.copy(alpha = 0.1f) else Color.Transparent
+                                        1 -> if (selectedTabIndex == 1) SuccessGreen.copy(alpha = 0.1f) else Color.Transparent
+                                        2 -> if (selectedTabIndex == 2) ErrorRed.copy(alpha = 0.1f) else Color.Transparent
                                         else -> Color.Transparent
                                     }
                                 )
@@ -150,9 +137,8 @@ fun AdminHomeScreen(
                                 modifier = Modifier.padding(16.dp),
                                 color = when (index) {
                                     0 -> if (selectedTabIndex == 0) AccentOrange else MaterialTheme.colorScheme.onBackground
-                                    1 -> if (selectedTabIndex == 1) AccentOrange else MaterialTheme.colorScheme.onBackground
-                                    2 -> if (selectedTabIndex == 2) SuccessGreen else MaterialTheme.colorScheme.onBackground
-                                    3 -> if (selectedTabIndex == 3) ErrorRed else MaterialTheme.colorScheme.onBackground
+                                    1 -> if (selectedTabIndex == 1) SuccessGreen else MaterialTheme.colorScheme.onBackground
+                                    2 -> if (selectedTabIndex == 2) ErrorRed else MaterialTheme.colorScheme.onBackground
                                     else -> MaterialTheme.colorScheme.onBackground
                                 },
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
@@ -171,12 +157,11 @@ fun AdminHomeScreen(
                     }
                 } else {
                     val filteredTickets = when (selectedTabIndex) {
-                        0 -> tickets.filter { it.assignee == null } // Sin asignar
-                        1 -> tickets.filter { 
+                        0 -> tickets.filter { 
                             it.status == TicketStatus.OPEN || it.status == TicketStatus.IN_PROGRESS 
                         } // Pendientes
-                        2 -> tickets.filter { it.status == TicketStatus.RESOLVED } // Completados
-                        3 -> tickets.filter { it.status == TicketStatus.CLOSED } // Cancelados
+                        1 -> tickets.filter { it.status == TicketStatus.RESOLVED } // Completados
+                        2 -> tickets.filter { it.status == TicketStatus.CLOSED } // Cancelados
                         else -> tickets
                     }
                     
@@ -219,25 +204,6 @@ fun AdminHomeScreen(
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
-                        // Opción Vista Observador
-                        TextButton(
-                            onClick = { showMenu = false },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    Icons.Default.Person,
-                                    contentDescription = "Vista",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text("Vista Observador")
-                            }
-                        }
-                        
                         // Opción Usuarios
                         TextButton(
                             onClick = {

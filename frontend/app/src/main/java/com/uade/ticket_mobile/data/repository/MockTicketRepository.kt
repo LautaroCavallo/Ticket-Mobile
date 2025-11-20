@@ -173,7 +173,6 @@ class MockTicketRepository {
     ): MockResponse<Ticket> {
         delay(1000)
         
-        val category = MockData.mockCategories.find { it.id == request.category }
         val priority = try {
             TicketPriority.valueOf(request.priority.uppercase())
         } catch (e: IllegalArgumentException) {
@@ -189,8 +188,7 @@ class MockTicketRepository {
             createdAt = Date().toString(),
             updatedAt = Date().toString(),
             creator = currentUser,
-            assignee = null,
-            category = category
+            assignee = null
         )
         
         tickets.add(0, newTicket) // Agregar al inicio de la lista

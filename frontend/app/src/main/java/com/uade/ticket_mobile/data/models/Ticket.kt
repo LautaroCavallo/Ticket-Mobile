@@ -5,29 +5,38 @@ import com.google.gson.annotations.SerializedName
 data class Ticket(
     val id: Int,
     val title: String,
-    val description: String,
+    val description: String?,
     val status: TicketStatus,
     val priority: TicketPriority,
-    @SerializedName("created_at")
+    @SerializedName("createdAt")
     val createdAt: String,
-    @SerializedName("updated_at")
+    @SerializedName("updatedAt")
     val updatedAt: String,
     val creator: User,
-    val assignee: User?,
-    val category: TicketCategory?
+    val assignee: User?
 )
 
 enum class TicketStatus {
+    @SerializedName("open")
     OPEN,
+    @SerializedName("in_progress")
     IN_PROGRESS,
+    @SerializedName("resolved")
     RESOLVED,
-    CLOSED
+    @SerializedName("closed")
+    CLOSED,
+    @SerializedName("canceled")
+    CANCELED
 }
 
 enum class TicketPriority {
+    @SerializedName("low")
     LOW,
+    @SerializedName("medium")
     MEDIUM,
+    @SerializedName("high")
     HIGH,
+    @SerializedName("urgent")
     URGENT
 }
 
@@ -40,8 +49,7 @@ data class TicketCategory(
 data class TicketCreateRequest(
     val title: String,
     val description: String,
-    val priority: String,
-    val category: Int?
+    val priority: String
 )
 
 data class TicketUpdateRequest(
@@ -49,6 +57,6 @@ data class TicketUpdateRequest(
     val description: String? = null,
     val status: String? = null,
     val priority: String? = null,
-    val assignee: Int? = null,
-    val category: Int? = null
+    @SerializedName("assigneeId")
+    val assigneeId: Int? = null
 )

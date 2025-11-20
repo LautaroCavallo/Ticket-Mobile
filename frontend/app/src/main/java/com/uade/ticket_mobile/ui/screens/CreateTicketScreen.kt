@@ -33,6 +33,7 @@ fun CreateTicketScreen(
     var selectedPriority by remember { mutableStateOf(TicketPriority.MEDIUM) }
     var selectedCategory by remember { mutableStateOf<TicketCategory?>(null) }
     var categories by remember { mutableStateOf<List<TicketCategory>>(emptyList()) }
+    var showCameraComingSoon by remember { mutableStateOf(false) }
     
     val uiState by viewModel.uiState.collectAsState()
     
@@ -43,13 +44,27 @@ fun CreateTicketScreen(
         }
     }
     
-    LaunchedEffect(uiState.error) {
-        if (uiState.error == null && title.isNotBlank() && description.isNotBlank()) {
+    LaunchedEffect(uiState.ticketCreatedSuccessfully) {
+        if (uiState.ticketCreatedSuccessfully) {
+            viewModel.resetTicketCreated()
             onTicketCreated()
         }
     }
     
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = error,
+                duration = SnackbarDuration.Long
+            )
+            viewModel.clearError()
+        }
+    }
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Crear Ticket") },
@@ -82,9 +97,15 @@ fun CreateTicketScreen(
                 value = title,
                 onValueChange = { title = it },
                 placeholder = { Text("Password reset not working") },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = title.isBlank() && uiState.error != null,
+                isError = title.isNotBlank() && title.length < 5,
+                supportingText = {
+                    Text(
+                        text = "Mínimo 5 caracteres (${title.length}/5)",
+                        color = if (title.length < 5) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     focusedLabelColor = MaterialTheme.colorScheme.primary
@@ -128,10 +149,15 @@ fun CreateTicketScreen(
                 placeholder = { Text("Can't reset my password :(") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .padding(bottom = 16.dp),
+                    .height(140.dp),
                 maxLines = 5,
-                isError = description.isBlank() && uiState.error != null,
+                isError = description.isNotBlank() && description.length < 10,
+                supportingText = {
+                    Text(
+                        text = "Mínimo 10 caracteres (${description.length}/10)",
+                        color = if (description.length < 10) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     focusedLabelColor = MaterialTheme.colorScheme.primary
@@ -147,23 +173,40 @@ fun CreateTicketScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            // Botón para subir imagen (placeholder)
+            // Botón para abrir cámara (próximamente)
             OutlinedButton(
-                onClick = { /* TODO: Implementar subida de imagen */ },
+                onClick = { 
+                    showCameraComingSoon = true
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
-                    .padding(bottom = 16.dp),
+                    .height(60.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Text(
-                    text = "+",
-                    fontSize = 24.sp,
+                    text = "📷",
+                    fontSize = 24.sp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Tomar foto",
+                    fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            
+            if (showCameraComingSoon) {
+                Text(
+                    text = "Funcionalidad de cámara próximamente",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Prioridad
             Text(
@@ -210,14 +253,13 @@ fun CreateTicketScreen(
                     viewModel.createTicket(
                         title = title,
                         description = description,
-                        priority = selectedPriority.name,
-                        categoryId = selectedCategory?.id
+                        priority = selectedPriority.name.lowercase()
                     )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                enabled = !uiState.isLoading && title.isNotBlank() && description.isNotBlank(),
+                enabled = !uiState.isLoading && title.length >= 5 && description.length >= 10,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )

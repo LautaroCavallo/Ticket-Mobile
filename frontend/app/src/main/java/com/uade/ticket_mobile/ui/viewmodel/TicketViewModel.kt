@@ -3,14 +3,14 @@ package com.uade.ticket_mobile.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uade.ticket_mobile.data.models.*
-import com.uade.ticket_mobile.data.repository.MockTicketRepository
+import com.uade.ticket_mobile.data.repository.TicketRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class TicketViewModel : ViewModel() {
-    private val repository = MockTicketRepository()
+    private val repository = TicketRepository()
     
     private val _uiState = MutableStateFlow(TicketUiState())
     val uiState: StateFlow<TicketUiState> = _uiState.asStateFlow()
@@ -27,7 +27,7 @@ class TicketViewModel : ViewModel() {
             try {
                 val response = repository.login(username, password)
                 if (response.isSuccessful) {
-                    val loginResponse = response.body
+                    val loginResponse = response.body()
                     loginResponse?.let {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
@@ -41,7 +41,7 @@ class TicketViewModel : ViewModel() {
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.message ?: "Error de autenticación"
+                        error = response.message() ?: "Error de autenticación"
                     )
                 }
             } catch (e: Exception) {
@@ -59,10 +59,10 @@ class TicketViewModel : ViewModel() {
             try {
                 val response = repository.getTickets(token)
                 if (response.isSuccessful) {
-                    _tickets.value = response.body?.results ?: emptyList()
+                    _tickets.value = response.body()?.results ?: emptyList()
                 } else {
                     _uiState.value = _uiState.value.copy(
-                        error = response.message ?: "Error al cargar tickets"
+                        error = response.message() ?: "Error al cargar tickets"
                     )
                 }
             } catch (e: Exception) {
@@ -73,20 +73,23 @@ class TicketViewModel : ViewModel() {
         }
     }
     
-    fun createTicket(title: String, description: String, priority: String, categoryId: Int?) {
+    fun createTicket(title: String, description: String, priority: String) {
         val token = _uiState.value.accessToken ?: "mock_token"
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, ticketCreatedSuccessfully = false)
             try {
-                val request = TicketCreateRequest(title, description, priority, categoryId)
+                val request = TicketCreateRequest(title, description, priority)
                 val response = repository.createTicket(token, request)
                 if (response.isSuccessful) {
-                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        ticketCreatedSuccessfully = true
+                    )
                     loadTickets() // Recargar la lista
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.message ?: "Error al crear ticket"
+                        error = response.message() ?: "Error al crear ticket"
                     )
                 }
             } catch (e: Exception) {
@@ -102,13 +105,17 @@ class TicketViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(error = null)
     }
     
+    fun resetTicketCreated() {
+        _uiState.value = _uiState.value.copy(ticketCreatedSuccessfully = false)
+    }
+    
     fun register(firstName: String, lastName: String, email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val response = repository.register(firstName, lastName, email, password)
                 if (response.isSuccessful) {
-                    val registerResponse = response.body
+                    val registerResponse = response.body()
                     registerResponse?.let {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
@@ -122,7 +129,7 @@ class TicketViewModel : ViewModel() {
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.message ?: "Error en el registro"
+                        error = response.message() ?: "Error en el registro"
                     )
                 }
             } catch (e: Exception) {
@@ -144,7 +151,7 @@ class TicketViewModel : ViewModel() {
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.message ?: "Error al solicitar recuperación"
+                        error = response.message() ?: "Error al solicitar recuperación"
                     )
                 }
             } catch (e: Exception) {
@@ -163,7 +170,7 @@ class TicketViewModel : ViewModel() {
             try {
                 val response = repository.updateProfile(token, firstName, lastName, email)
                 if (response.isSuccessful) {
-                    val updatedUser = response.body
+                    val updatedUser = response.body()
                     updatedUser?.let {
                         _currentUser.value = it
                         _uiState.value = _uiState.value.copy(isLoading = false)
@@ -171,7 +178,7 @@ class TicketViewModel : ViewModel() {
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.message ?: "Error al actualizar perfil"
+                        error = response.message() ?: "Error al actualizar perfil"
                     )
                 }
             } catch (e: Exception) {
@@ -194,7 +201,7 @@ class TicketViewModel : ViewModel() {
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.message ?: "Error al cambiar contraseña"
+                        error = response.message() ?: "Error al cambiar contraseña"
                     )
                 }
             } catch (e: Exception) {
@@ -222,5 +229,6 @@ data class TicketUiState(
     val isAuthenticated: Boolean = false,
     val accessToken: String? = null,
     val refreshToken: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val ticketCreatedSuccessfully: Boolean = false
 )

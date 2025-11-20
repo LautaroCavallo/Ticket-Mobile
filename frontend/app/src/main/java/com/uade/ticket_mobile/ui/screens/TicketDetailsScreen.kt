@@ -105,6 +105,7 @@ fun TicketDetailsScreen(
                             TicketStatus.IN_PROGRESS -> AccentOrange
                             TicketStatus.RESOLVED -> SuccessGreen
                             TicketStatus.CLOSED -> ErrorRed
+                            TicketStatus.CANCELED -> ErrorRed
                         }
                         
                         Surface(
@@ -342,7 +343,8 @@ fun CommentItem(
         ) {
             Text(
                 text = comment.author.firstName?.firstOrNull()?.toString()?.uppercase() 
-                    ?: comment.author.username.first().toString().uppercase(),
+                    ?: comment.author.username?.firstOrNull()?.toString()?.uppercase()
+                    ?: comment.author.email.first().toString().uppercase(),
                 color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold

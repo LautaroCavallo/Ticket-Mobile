@@ -357,6 +357,28 @@ fun AdminTicketCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
+            // Usuario asignado
+            ticket.assignee?.let { assignee ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Asignado a",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Asignado a: ${assignee.firstName} ${assignee.lastName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
             // Botones de acción
             Row(
                 modifier = Modifier

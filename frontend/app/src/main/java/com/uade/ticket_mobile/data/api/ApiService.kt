@@ -50,20 +50,20 @@ interface ApiService {
         @Path("id") id: Int
     ): Response<Ticket>
     
-    @POST("tickets/")
+    @POST("tickets/create/")
     suspend fun createTicket(
         @Header("Authorization") token: String,
         @Body request: TicketCreateRequest
     ): Response<Ticket>
     
-    @PUT("tickets/{id}/")
+    @PUT("tickets/{id}/update/")
     suspend fun updateTicket(
         @Header("Authorization") token: String,
         @Path("id") id: Int,
         @Body request: TicketUpdateRequest
     ): Response<Ticket>
     
-    @DELETE("tickets/{id}/")
+    @DELETE("tickets/{id}/delete/")
     suspend fun deleteTicket(
         @Header("Authorization") token: String,
         @Path("id") id: Int

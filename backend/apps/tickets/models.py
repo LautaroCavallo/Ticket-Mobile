@@ -49,6 +49,12 @@ class Ticket(models.Model):
         blank=True,
         related_name='assigned_tickets'
     )
+    image = models.ImageField(
+        upload_to='ticket_images/',
+        null=True,
+        blank=True,
+        help_text='Imagen adjunta al ticket'
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True)

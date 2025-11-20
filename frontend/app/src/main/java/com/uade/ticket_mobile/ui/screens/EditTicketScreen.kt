@@ -28,7 +28,7 @@ fun EditTicketScreen(
     var selectedAssignee by remember { mutableStateOf(ticket.assignee?.let { "${it.firstName} ${it.lastName}".trim() } ?: "Juan Pérez") }
     var selectedPriority by remember { mutableStateOf(ticket.priority) }
     var selectedStatus by remember { mutableStateOf(ticket.status) }
-    var description by remember { mutableStateOf(ticket.description) }
+    var description by remember { mutableStateOf(ticket.description ?: "") }
     
     var showAssigneeDropdown by remember { mutableStateOf(false) }
     var showPriorityDropdown by remember { mutableStateOf(false) }
@@ -206,6 +206,7 @@ fun EditTicketScreen(
                             TicketStatus.IN_PROGRESS -> "En proceso"
                             TicketStatus.RESOLVED -> "Resuelto"
                             TicketStatus.CLOSED -> "Cerrado"
+                            TicketStatus.CANCELED -> "Cancelado"
                         },
                         onValueChange = { },
                         modifier = Modifier
@@ -236,6 +237,7 @@ fun EditTicketScreen(
                                         TicketStatus.IN_PROGRESS -> "En proceso"
                                         TicketStatus.RESOLVED -> "Resuelto"
                                         TicketStatus.CLOSED -> "Cerrado"
+                                        TicketStatus.CANCELED -> "Cancelado"
                                     })
                                 },
                                 onClick = {

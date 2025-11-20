@@ -268,15 +268,39 @@ fun TicketCard(ticket: Ticket) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
+            // Usuario asignado
+            ticket.assignee?.let { assignee ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Asignado a",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Asignado a: ${assignee.firstName} ${assignee.lastName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
             Spacer(modifier = Modifier.height(8.dp))
             
             // Descripción (limitada)
             Text(
-                text = if (ticket.description.length > 100) {
-                    "${ticket.description.take(100)}..."
-                } else {
-                    ticket.description
-                },
+                text = ticket.description?.let { desc ->
+                    if (desc.length > 100) {
+                        "${desc.take(100)}..."
+                    } else {
+                        desc
+                    }
+                } ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -288,10 +312,11 @@ fun TicketCard(ticket: Ticket) {
 @Composable
 fun StatusChip(status: TicketStatus) {
     val (color, text) = when (status) {
-        TicketStatus.OPEN -> PendingColor to "ASIGNADO"
-        TicketStatus.IN_PROGRESS -> PendingColor to "SIN ASIGNAR"
-        TicketStatus.RESOLVED -> CompletedColor to "COMPLETO"
-        TicketStatus.CLOSED -> CanceledColor to "CANCELADO"
+        TicketStatus.OPEN -> PendingColor to "ABIERTO"
+        TicketStatus.IN_PROGRESS -> PendingColor to "EN PROCESO"
+        TicketStatus.RESOLVED -> CompletedColor to "RESUELTO"
+        TicketStatus.CLOSED -> CanceledColor to "CERRADO"
+        TicketStatus.CANCELED -> CanceledColor to "CANCELADO"
     }
     
     Surface(

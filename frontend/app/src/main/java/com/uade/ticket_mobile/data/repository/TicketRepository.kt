@@ -37,7 +37,10 @@ class TicketRepository {
     suspend fun changePassword(token: String, currentPassword: String, newPassword: String): Response<Unit> {
         return apiService.changePassword(
             "Bearer $token",
-            ChangePasswordRequest(currentPassword, newPassword)
+            ChangePasswordRequest(
+                currentPassword = currentPassword,
+                newPassword = newPassword
+            )
         )
     }
     

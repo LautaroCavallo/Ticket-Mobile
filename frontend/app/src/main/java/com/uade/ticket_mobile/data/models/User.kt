@@ -13,7 +13,8 @@ data class User(
     @SerializedName("isStaff")
     val isStaff: Boolean = false,
     @SerializedName("isSuperuser")
-    val isSuperuser: Boolean = false
+    val isSuperuser: Boolean = false,
+    val role: String? = null
 )
 
 data class UserLoginRequest(

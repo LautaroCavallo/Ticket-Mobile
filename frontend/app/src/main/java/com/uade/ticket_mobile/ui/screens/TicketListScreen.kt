@@ -138,7 +138,7 @@ fun TicketListScreen(
                     }
                 } else {
                     val filteredTickets = tickets.filter { ticket ->
-                        ticket.status in tabStatuses[selectedTabIndex]
+                        ticket.safeStatus in tabStatuses[selectedTabIndex]
                     }
                     
                     if (filteredTickets.isEmpty()) {
@@ -256,7 +256,7 @@ fun TicketCard(ticket: Ticket) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                StatusChip(status = ticket.status)
+                StatusChip(status = ticket.safeStatus)
             }
             
             Spacer(modifier = Modifier.height(8.dp))

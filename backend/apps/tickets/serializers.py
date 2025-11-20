@@ -49,7 +49,10 @@ class TicketListSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
+            # Fallback: construir URL con configuración por defecto
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'http://10.0.2.2:8000')
+            return f"{base_url}{obj.image.url}"
         return None
 
     def get_commentsCount(self, obj):
@@ -99,7 +102,10 @@ class TicketDetailSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
+            # Fallback: construir URL con configuración por defecto
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'http://10.0.2.2:8000')
+            return f"{base_url}{obj.image.url}"
         return None
 
 

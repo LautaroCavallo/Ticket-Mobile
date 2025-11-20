@@ -3,7 +3,6 @@ package com.uade.ticket_mobile.data.local.entities
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.uade.ticket_mobile.data.models.Ticket
-import com.uade.ticket_mobile.data.models.TicketCategory
 import com.uade.ticket_mobile.data.models.TicketPriority
 import com.uade.ticket_mobile.data.models.TicketStatus
 import com.uade.ticket_mobile.data.models.User
@@ -13,13 +12,13 @@ data class TicketEntity(
     @PrimaryKey
     val id: Int,
     val title: String,
-    val description: String,
+    val description: String?,
     val status: String,
     val priority: String,
     val createdAt: String,
     val updatedAt: String,
     val creatorId: Int,
-    val creatorUsername: String,
+    val creatorUsername: String?,
     val creatorEmail: String,
     val creatorFirstName: String?,
     val creatorLastName: String?,
@@ -28,10 +27,7 @@ data class TicketEntity(
     val assigneeEmail: String?,
     val assigneeFirstName: String?,
     val assigneeLastName: String?,
-    val categoryId: Int?,
-    val categoryName: String?,
-    val categoryDescription: String?,
-    val image: String?
+    val imageUrl: String?
 ) {
     fun toTicket(): Ticket {
         return Ticket(
@@ -54,7 +50,7 @@ data class TicketEntity(
             assignee = assigneeId?.let {
                 User(
                     id = it,
-                    username = assigneeUsername ?: "",
+                    username = assigneeUsername,
                     email = assigneeEmail ?: "",
                     firstName = assigneeFirstName,
                     lastName = assigneeLastName,
@@ -62,14 +58,7 @@ data class TicketEntity(
                     isSuperuser = false
                 )
             },
-            category = categoryId?.let {
-                TicketCategory(
-                    id = it,
-                    name = categoryName ?: "",
-                    description = categoryDescription
-                )
-            },
-            image = image
+            imageUrl = imageUrl
         )
     }
     
@@ -79,7 +68,7 @@ data class TicketEntity(
                 id = ticket.id,
                 title = ticket.title,
                 description = ticket.description,
-                status = ticket.status.name,
+                status = ticket.safeStatus.name, // Usar safeStatus para evitar null
                 priority = ticket.priority.name,
                 createdAt = ticket.createdAt,
                 updatedAt = ticket.updatedAt,
@@ -93,10 +82,7 @@ data class TicketEntity(
                 assigneeEmail = ticket.assignee?.email,
                 assigneeFirstName = ticket.assignee?.firstName,
                 assigneeLastName = ticket.assignee?.lastName,
-                categoryId = ticket.category?.id,
-                categoryName = ticket.category?.name,
-                categoryDescription = ticket.category?.description,
-                image = ticket.image
+                imageUrl = ticket.imageUrl
             )
         }
     }

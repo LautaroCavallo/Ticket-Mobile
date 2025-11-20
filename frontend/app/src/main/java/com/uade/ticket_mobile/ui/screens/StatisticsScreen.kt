@@ -335,7 +335,7 @@ fun RendimientoTab(performance: TicketsPerformanceResponse?) {
         MetricCard(
             title = "Tiempo Promedio de Resolución",
             value = String.format("%.1f hrs", performance.averageResolutionTime),
-            icon = Icons.Default.Timer,
+            icon = Icons.Default.Star,
             color = AccentOrange
         )
         
@@ -369,7 +369,7 @@ fun RendimientoTab(performance: TicketsPerformanceResponse?) {
                 modifier = Modifier.weight(1f),
                 title = "Hoy",
                 value = performance.totalCreatedToday.toString(),
-                icon = Icons.Default.Today
+                icon = Icons.Default.DateRange
             )
             SmallMetricCard(
                 modifier = Modifier.weight(1f),
@@ -381,7 +381,7 @@ fun RendimientoTab(performance: TicketsPerformanceResponse?) {
                 modifier = Modifier.weight(1f),
                 title = "Este Mes",
                 value = performance.totalCreatedThisMonth.toString(),
-                icon = Icons.Default.CalendarMonth
+                icon = Icons.Default.DateRange
             )
         }
     }
@@ -546,7 +546,7 @@ fun SaludTab(health: SystemHealthResponse?) {
                     imageVector = when(health.status) {
                         "healthy" -> Icons.Default.CheckCircle
                         "warning" -> Icons.Default.Warning
-                        else -> Icons.Default.Error
+                        else -> Icons.Default.Info
                     },
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),

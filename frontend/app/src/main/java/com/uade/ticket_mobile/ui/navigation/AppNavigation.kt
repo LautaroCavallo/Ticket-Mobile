@@ -23,9 +23,17 @@ fun AppNavigation(
     val context = LocalContext.current
     val prefsManager = remember { PreferencesManager(context) }
     
-    // Determinar pantalla inicial
-    val startDestination = if (prefsManager.isOnboardingCompleted()) {
-        "mock_info"
+    // TEMPORAL: Forzar onboarding para testing (comentar esta línea en producción)
+    prefsManager.resetOnboarding()
+    
+    // Leer el estado del onboarding directamente cada vez (sin cache)
+    // Si el valor no existe, devuelve false (mostrar onboarding)
+    val isOnboardingCompleted = prefsManager.isOnboardingCompleted()
+    
+    // Determinar pantalla inicial basada en el estado actual
+    // Por defecto siempre mostrar onboarding a menos que esté explícitamente completado
+    val startDestination = if (isOnboardingCompleted) {
+        "login"
     } else {
         "onboarding"
     }
@@ -39,18 +47,8 @@ fun AppNavigation(
             OnboardingScreen(
                 onFinish = {
                     prefsManager.setOnboardingCompleted(true)
-                    navController.navigate("mock_info") {
-                        popUpTo("onboarding") { inclusive = true }
-                    }
-                }
-            )
-        }
-        
-        composable("mock_info") {
-            MockInfoScreen(
-                onContinue = {
                     navController.navigate("login") {
-                        popUpTo("mock_info") { inclusive = true }
+                        popUpTo("onboarding") { inclusive = true }
                     }
                 }
             )
@@ -214,7 +212,8 @@ fun AppNavigation(
                 },
                 onEditTicket = { ticketToEdit ->
                     navController.navigate("edit_ticket/${ticketToEdit.id}")
-                }
+                },
+                viewModel = viewModel
             )
         }
         
@@ -229,9 +228,9 @@ fun AppNavigation(
                     navController.popBackStack()
                 },
                 onSaveChanges = { updatedTicket ->
-                    // TODO: Implementar actualización del ticket en el ViewModel
                     navController.popBackStack()
-                }
+                },
+                viewModel = viewModel
             )
         }
     }

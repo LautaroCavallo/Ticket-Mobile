@@ -1,6 +1,8 @@
 package com.uade.ticket_mobile.data.api
 
 import com.uade.ticket_mobile.data.models.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -50,11 +52,15 @@ interface ApiService {
         @Path("id") id: Int
     ): Response<Ticket>
     
+    @Multipart
     @POST("tickets/create/")
     suspend fun createTicket(
         @Header("Authorization") token: String,
-        @Body request: TicketCreateRequest
-    ): Response<Ticket>
+        @Part("title") title: RequestBody,
+        @Part("description") description: RequestBody,
+        @Part("priority") priority: RequestBody,
+        @Part image: MultipartBody.Part? = null
+    ): Response<TicketCreateResponse>
     
     @PUT("tickets/{id}/update/")
     suspend fun updateTicket(
@@ -74,6 +80,35 @@ interface ApiService {
     suspend fun getCategories(
         @Header("Authorization") token: String
     ): Response<List<TicketCategory>>
+    
+    // Users
+    @GET("users/support/")
+    suspend fun getSupportUsers(
+        @Header("Authorization") token: String
+    ): Response<PagedResponse<User>>
+    
+    // Attachments
+    @GET("tickets/{ticket_id}/attachments/")
+    suspend fun getTicketAttachments(
+        @Header("Authorization") token: String,
+        @Path("ticket_id") ticketId: Int
+    ): Response<AttachmentListResponse>
+    
+    @Multipart
+    @POST("tickets/{ticket_id}/attachments/upload/")
+    suspend fun uploadAttachment(
+        @Header("Authorization") token: String,
+        @Path("ticket_id") ticketId: Int,
+        @Part file: MultipartBody.Part,
+        @Part("isPrivate") isPrivate: RequestBody? = null
+    ): Response<AttachmentUploadResponse>
+    
+    @DELETE("tickets/{ticket_id}/attachments/{attachment_id}/delete/")
+    suspend fun deleteAttachment(
+        @Header("Authorization") token: String,
+        @Path("ticket_id") ticketId: Int,
+        @Path("attachment_id") attachmentId: Int
+    ): Response<Unit>
     
     // Metrics
     @GET("metrics/tickets/overview/")

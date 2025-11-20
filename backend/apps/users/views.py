@@ -73,6 +73,21 @@ def list_users_view(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def get_support_users_view(request):
+    """
+    Get list of support users (for ticket assignment).
+    GET /api/users/support/
+    """
+    support_users = User.objects.filter(role='support', is_active=True).order_by('first_name', 'last_name')
+    serializer = UserListSerializer(support_users, many=True)
+    return Response({
+        'count': support_users.count(),
+        'results': serializer.data
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_user_profile_view(request):
     """
     Get current user profile.

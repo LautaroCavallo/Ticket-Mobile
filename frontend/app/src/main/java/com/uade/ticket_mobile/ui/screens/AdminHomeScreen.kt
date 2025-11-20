@@ -7,8 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -58,11 +56,6 @@ fun AdminHomeScreen(
                 navigationIcon = {
                     IconButton(onClick = { showMenu = !showMenu }) {
                         Icon(Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO: Implementar filtros */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -329,13 +322,6 @@ fun AdminTicketCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Asignado a",
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "Asignado a: ${assignee.firstName} ${assignee.lastName}",
                         style = MaterialTheme.typography.bodySmall,
@@ -343,27 +329,6 @@ fun AdminTicketCard(
                         fontWeight = FontWeight.Medium
                     )
                 }
-            }
-            
-            // Botones de acción
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Ver",
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    "✏️",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
             }
         }
     }

@@ -3,7 +3,9 @@ package com.uade.ticket_mobile.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -23,9 +25,12 @@ fun AppNavigation(
     val context = LocalContext.current
     val prefsManager = remember { PreferencesManager(context) }
     
+    // Estado reactivo para el onboarding
+    var isOnboardingCompleted by remember { mutableStateOf(prefsManager.isOnboardingCompleted()) }
+    
     // Determinar pantalla inicial
-    val startDestination = if (prefsManager.isOnboardingCompleted()) {
-        "mock_info"
+    val startDestination = if (isOnboardingCompleted) {
+        "login"
     } else {
         "onboarding"
     }
@@ -39,18 +44,9 @@ fun AppNavigation(
             OnboardingScreen(
                 onFinish = {
                     prefsManager.setOnboardingCompleted(true)
-                    navController.navigate("mock_info") {
-                        popUpTo("onboarding") { inclusive = true }
-                    }
-                }
-            )
-        }
-        
-        composable("mock_info") {
-            MockInfoScreen(
-                onContinue = {
+                    isOnboardingCompleted = true
                     navController.navigate("login") {
-                        popUpTo("mock_info") { inclusive = true }
+                        popUpTo("onboarding") { inclusive = true }
                     }
                 }
             )

@@ -1,6 +1,7 @@
 package com.uade.ticket_mobile.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -106,38 +107,62 @@ fun AdminHomeScreen(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                 
                 // Tabs para filtrar por estado
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.background,
-                    contentColor = MaterialTheme.colorScheme.onBackground
+                Surface(
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    tabTitles.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            modifier = Modifier
-                                .background(
-                                    when (index) {
-                                        0 -> if (selectedTabIndex == 0) AccentOrange.copy(alpha = 0.1f) else Color.Transparent
-                                        1 -> if (selectedTabIndex == 1) SuccessGreen.copy(alpha = 0.1f) else Color.Transparent
-                                        2 -> if (selectedTabIndex == 2) ErrorRed.copy(alpha = 0.1f) else Color.Transparent
-                                        else -> Color.Transparent
-                                    }
-                                )
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Text(
-                                text = title,
-                                modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
-                                color = when (index) {
-                                    0 -> if (selectedTabIndex == 0) AccentOrange else MaterialTheme.colorScheme.onBackground
-                                    1 -> if (selectedTabIndex == 1) SuccessGreen else MaterialTheme.colorScheme.onBackground
-                                    2 -> if (selectedTabIndex == 2) ErrorRed else MaterialTheme.colorScheme.onBackground
-                                    else -> MaterialTheme.colorScheme.onBackground
-                                },
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 13.sp,
-                                textAlign = TextAlign.Center
-                            )
+                            tabTitles.forEachIndexed { index, title ->
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .background(
+                                            when (index) {
+                                                0 -> if (selectedTabIndex == 0) AccentOrange.copy(alpha = 0.1f) else Color.Transparent
+                                                1 -> if (selectedTabIndex == 1) SuccessGreen.copy(alpha = 0.1f) else Color.Transparent
+                                                2 -> if (selectedTabIndex == 2) ErrorRed.copy(alpha = 0.1f) else Color.Transparent
+                                                else -> Color.Transparent
+                                            }
+                                        )
+                                        .clickable { selectedTabIndex = index }
+                                ) {
+                                    Text(
+                                        text = title,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 16.dp),
+                                        color = when (index) {
+                                            0 -> if (selectedTabIndex == 0) AccentOrange else MaterialTheme.colorScheme.onBackground
+                                            1 -> if (selectedTabIndex == 1) SuccessGreen else MaterialTheme.colorScheme.onBackground
+                                            2 -> if (selectedTabIndex == 2) ErrorRed else MaterialTheme.colorScheme.onBackground
+                                            else -> MaterialTheme.colorScheme.onBackground
+                                        },
+                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 13.sp,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1
+                                    )
+                                    // Indicador de pestaña seleccionada
+                                    if (selectedTabIndex == index) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            thickness = 2.dp,
+                                            color = when (index) {
+                                                0 -> AccentOrange
+                                                1 -> SuccessGreen
+                                                2 -> ErrorRed
+                                                else -> MaterialTheme.colorScheme.primary
+                                            }
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -1,6 +1,7 @@
 package com.uade.ticket_mobile.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -94,36 +95,62 @@ fun TicketListScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 // Tabs para filtrar por estado
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.background,
-                    contentColor = MaterialTheme.colorScheme.onBackground
+                Surface(
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    tabTitles.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            modifier = Modifier
-                                .background(
-                                    when (index) {
-                                        0 -> if (selectedTabIndex == 0) PendingColor.copy(alpha = 0.1f) else Color.Transparent
-                                        1 -> if (selectedTabIndex == 1) CompletedColor.copy(alpha = 0.1f) else Color.Transparent
-                                        2 -> if (selectedTabIndex == 2) CanceledColor.copy(alpha = 0.1f) else Color.Transparent
-                                        else -> Color.Transparent
-                                    }
-                                )
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Text(
-                                text = title,
-                                modifier = Modifier.padding(16.dp),
-                                color = when (index) {
-                                    0 -> if (selectedTabIndex == 0) PendingColor else MaterialTheme.colorScheme.onBackground
-                                    1 -> if (selectedTabIndex == 1) CompletedColor else MaterialTheme.colorScheme.onBackground
-                                    2 -> if (selectedTabIndex == 2) CanceledColor else MaterialTheme.colorScheme.onBackground
-                                    else -> MaterialTheme.colorScheme.onBackground
-                                },
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
-                            )
+                            tabTitles.forEachIndexed { index, title ->
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .background(
+                                            when (index) {
+                                                0 -> if (selectedTabIndex == 0) PendingColor.copy(alpha = 0.1f) else Color.Transparent
+                                                1 -> if (selectedTabIndex == 1) CompletedColor.copy(alpha = 0.1f) else Color.Transparent
+                                                2 -> if (selectedTabIndex == 2) CanceledColor.copy(alpha = 0.1f) else Color.Transparent
+                                                else -> Color.Transparent
+                                            }
+                                        )
+                                        .clickable { selectedTabIndex = index }
+                                ) {
+                                    Text(
+                                        text = title,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 16.dp),
+                                        color = when (index) {
+                                            0 -> if (selectedTabIndex == 0) PendingColor else MaterialTheme.colorScheme.onBackground
+                                            1 -> if (selectedTabIndex == 1) CompletedColor else MaterialTheme.colorScheme.onBackground
+                                            2 -> if (selectedTabIndex == 2) CanceledColor else MaterialTheme.colorScheme.onBackground
+                                            else -> MaterialTheme.colorScheme.onBackground
+                                        },
+                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 13.sp,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1
+                                    )
+                                    // Indicador de pestaña seleccionada
+                                    if (selectedTabIndex == index) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            thickness = 2.dp,
+                                            color = when (index) {
+                                                0 -> PendingColor
+                                                1 -> CompletedColor
+                                                2 -> CanceledColor
+                                                else -> MaterialTheme.colorScheme.primary
+                                            }
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                    }
+                                }
+                            }
                         }
                     }
                 }

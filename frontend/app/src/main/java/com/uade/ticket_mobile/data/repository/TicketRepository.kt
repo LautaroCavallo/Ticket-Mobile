@@ -76,4 +76,21 @@ class TicketRepository {
     suspend fun getCategories(token: String): Response<List<TicketCategory>> {
         return apiService.getCategories("Bearer $token")
     }
+    
+    // Metrics methods
+    suspend fun getTicketsOverview(token: String): Response<TicketsOverviewResponse> {
+        return apiService.getTicketsOverview("Bearer $token")
+    }
+    
+    suspend fun getTicketsPerformance(token: String): Response<TicketsPerformanceResponse> {
+        return apiService.getTicketsPerformance("Bearer $token")
+    }
+    
+    suspend fun getUsersActivity(token: String): Response<UsersActivityResponse> {
+        return apiService.getUsersActivity("Bearer $token")
+    }
+    
+    suspend fun getSystemHealth(token: String): Response<SystemHealthResponse> {
+        return apiService.getSystemHealth("Bearer $token")
+    }
 }

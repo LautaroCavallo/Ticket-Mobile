@@ -184,6 +184,7 @@ fun AppNavigation(
         
         composable("statistics") {
             StatisticsScreen(
+                ticketViewModel = viewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

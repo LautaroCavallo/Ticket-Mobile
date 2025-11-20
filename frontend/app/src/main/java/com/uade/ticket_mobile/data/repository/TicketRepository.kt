@@ -11,6 +11,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import okhttp3.ResponseBody
 import retrofit2.Response
 import java.io.File
 
@@ -124,12 +125,30 @@ class TicketRepository(context: Context? = null) {
             imagePart
         )
         
-        // Guardar en caché si fue exitoso
+        // Convertir TicketCreateResponse a Response<Ticket>
         if (response.isSuccessful && response.body() != null) {
-            ticketDao?.insertTicket(TicketEntity.fromTicket(response.body()!!))
+            val createResponse = response.body()!!
+            var ticket = createResponse.ticket
+            
+            // Asegurar que el ticket tenga un status válido (por defecto OPEN)
+            if (ticket.status == null) {
+                ticket = ticket.copy(status = TicketStatus.OPEN)
+            }
+            
+            // Guardar en caché si fue exitoso
+            ticketDao?.insertTicket(TicketEntity.fromTicket(ticket))
+            
+            // Crear una nueva Response con el ticket extraído
+            // Usar el raw response original pero con el body del ticket
+            val rawResponse = response.raw()
+            return Response.success(ticket, rawResponse)
         }
         
-        return response
+        // Si hay error, retornar error
+        return Response.error(
+            response.code(),
+            response.errorBody() ?: ResponseBody.create(null, response.message() ?: "Error")
+        )
     }
     
     suspend fun updateTicket(token: String, id: Int, request: TicketUpdateRequest): Response<Ticket> {

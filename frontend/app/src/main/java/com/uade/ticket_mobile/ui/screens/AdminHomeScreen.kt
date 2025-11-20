@@ -151,10 +151,10 @@ fun AdminHomeScreen(
                 } else {
                     val filteredTickets = when (selectedTabIndex) {
                         0 -> tickets.filter { 
-                            it.status == TicketStatus.OPEN || it.status == TicketStatus.IN_PROGRESS 
+                            it.safeStatus == TicketStatus.OPEN || it.safeStatus == TicketStatus.IN_PROGRESS 
                         } // Pendientes
-                        1 -> tickets.filter { it.status == TicketStatus.RESOLVED } // Completados
-                        2 -> tickets.filter { it.status == TicketStatus.CLOSED } // Cancelados
+                        1 -> tickets.filter { it.safeStatus == TicketStatus.RESOLVED } // Completados
+                        2 -> tickets.filter { it.safeStatus == TicketStatus.CLOSED } // Cancelados
                         else -> tickets
                     }
                     

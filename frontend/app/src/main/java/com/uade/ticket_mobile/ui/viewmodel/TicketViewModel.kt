@@ -217,7 +217,7 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     fun getTicketsByStatus(status: TicketStatus): List<Ticket> {
-        return _tickets.value.filter { it.status == status }
+        return _tickets.value.filter { it.safeStatus == status }
     }
     
     // Users

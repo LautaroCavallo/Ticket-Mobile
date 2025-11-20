@@ -44,7 +44,7 @@ fun EditTicketScreen(
     val supportUsers = users
     
     var selectedPriority by remember { mutableStateOf(ticket.priority) }
-    var selectedStatus by remember { mutableStateOf(ticket.status) }
+    var selectedStatus by remember { mutableStateOf(ticket.safeStatus) }
     var description by remember { mutableStateOf(ticket.description ?: "") }
     var selectedAssignee by remember { mutableStateOf<User?>(ticket.assignee) }
     

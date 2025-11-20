@@ -68,7 +68,7 @@ data class TicketEntity(
                 id = ticket.id,
                 title = ticket.title,
                 description = ticket.description,
-                status = ticket.status.name,
+                status = ticket.safeStatus.name, // Usar safeStatus para evitar null
                 priority = ticket.priority.name,
                 createdAt = ticket.createdAt,
                 updatedAt = ticket.updatedAt,

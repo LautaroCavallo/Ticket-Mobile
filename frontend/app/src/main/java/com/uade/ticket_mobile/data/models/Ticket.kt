@@ -6,7 +6,7 @@ data class Ticket(
     val id: Int,
     val title: String,
     val description: String?,
-    val status: TicketStatus,
+    val status: TicketStatus? = TicketStatus.OPEN, // Nullable con valor por defecto
     val priority: TicketPriority,
     @SerializedName("createdAt")
     val createdAt: String,
@@ -16,7 +16,11 @@ data class Ticket(
     val assignee: User?,
     @SerializedName("imageUrl")
     val imageUrl: String? = null
-)
+) {
+    // Propiedad computada para obtener el status con valor por defecto
+    val safeStatus: TicketStatus
+        get() = status ?: TicketStatus.OPEN
+}
 
 enum class TicketStatus {
     @SerializedName("open")
@@ -61,4 +65,9 @@ data class TicketUpdateRequest(
     val priority: String? = null,
     @SerializedName("assigneeId")
     val assigneeId: Int? = null
+)
+
+data class TicketCreateResponse(
+    val msg: String? = null,
+    val ticket: Ticket
 )

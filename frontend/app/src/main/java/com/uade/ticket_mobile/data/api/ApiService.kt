@@ -60,7 +60,7 @@ interface ApiService {
         @Part("description") description: RequestBody,
         @Part("priority") priority: RequestBody,
         @Part image: MultipartBody.Part? = null
-    ): Response<Ticket>
+    ): Response<TicketCreateResponse>
     
     @PUT("tickets/{id}/update/")
     suspend fun updateTicket(

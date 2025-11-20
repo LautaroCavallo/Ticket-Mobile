@@ -255,7 +255,7 @@ fun TicketDetailsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Estado del ticket
-                        val statusColor = when (ticket.status) {
+                        val statusColor = when (ticket.safeStatus) {
                             TicketStatus.OPEN -> AccentOrange
                             TicketStatus.IN_PROGRESS -> AccentOrange
                             TicketStatus.RESOLVED -> SuccessGreen
@@ -263,7 +263,7 @@ fun TicketDetailsScreen(
                             TicketStatus.CANCELED -> ErrorRed
                         }
                         
-                        val statusText = when (ticket.status) {
+                        val statusText = when (ticket.safeStatus) {
                             TicketStatus.OPEN -> "ABIERTO"
                             TicketStatus.IN_PROGRESS -> "EN PROGRESO"
                             TicketStatus.RESOLVED -> "RESUELTO"

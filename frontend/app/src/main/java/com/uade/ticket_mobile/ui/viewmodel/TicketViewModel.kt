@@ -224,7 +224,95 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
     private val _users = MutableStateFlow<List<User>>(emptyList())
     val users: StateFlow<List<User>> = _users.asStateFlow()
     
-    fun loadUsers() {
+    private val _loadingUsers = MutableStateFlow(false)
+    val loadingUsers: StateFlow<Boolean> = _loadingUsers.asStateFlow()
+    
+    private val _usersError = MutableStateFlow<String?>(null)
+    val usersError: StateFlow<String?> = _usersError.asStateFlow()
+    
+    fun setUsersError(error: String?) {
+        _usersError.value = error
+    }
+    
+    fun loadUsers(
+        role: String? = null,
+        isActive: Boolean? = null,
+        search: String? = null
+    ) {
+        val token = _uiState.value.accessToken
+        if (token == null) {
+            println("ERROR: No hay token de acceso")
+            return
+        }
+        viewModelScope.launch {
+            _loadingUsers.value = true
+            _usersError.value = null // Limpiar error previo
+            try {
+                println("DEBUG: Attempting to load users with token: ${token.take(20)}...")
+                val response = repository.getUsers(token, role = role, isActive = isActive, search = search)
+                println("DEBUG: Response code: ${response.code()}")
+                println("DEBUG: Response isSuccessful: ${response.isSuccessful}")
+                println("DEBUG: Response message: ${response.message()}")
+                println("DEBUG: Current user role: ${_currentUser.value?.role}")
+                println("DEBUG: Current user isSuperuser: ${_currentUser.value?.isSuperuser}")
+                println("DEBUG: Has response body: ${response.body() != null}")
+                
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    println("DEBUG: Response body is null: ${body == null}")
+                    if (body != null) {
+                        println("DEBUG: Response count: ${body.count}")
+                        println("DEBUG: Response next: ${body.next}")
+                        println("DEBUG: Response previous: ${body.previous}")
+                        println("DEBUG: Results count: ${body.results.size}")
+                        if (body.results.isNotEmpty()) {
+                            println("DEBUG: First user ID: ${body.results[0].id}")
+                            println("DEBUG: First user email: ${body.results[0].email}")
+                            println("DEBUG: First user role: ${body.results[0].role}")
+                            println("DEBUG: First user full object: ${body.results[0]}")
+                        } else {
+                            println("WARNING: Response body is not null but results list is empty!")
+                            println("DEBUG: Full response body: $body")
+                        }
+                        _users.value = body.results
+                        _usersError.value = null // Limpiar error si fue exitoso
+                    } else {
+                        println("ERROR: Response body is null")
+                        _users.value = emptyList()
+                        _usersError.value = "Error: La respuesta del servidor está vacía"
+                    }
+                } else {
+                    val errorBody = try {
+                        response.errorBody()?.string()
+                    } catch (e: Exception) {
+                        null
+                    }
+                    println("ERROR: Failed to load users - Code: ${response.code()}, Message: ${response.message()}")
+                    println("ERROR: Error body: $errorBody")
+                    _users.value = emptyList()
+                    _usersError.value = when (response.code()) {
+                        403 -> "No tienes permisos para ver usuarios. Se requiere rol de administrador (sysAdmin). Tu rol actual: ${_currentUser.value?.role ?: "desconocido"}"
+                        401 -> "Sesión expirada. Por favor, inicia sesión nuevamente."
+                        404 -> "Endpoint no encontrado. Verifica la URL del servidor."
+                        else -> "Error al cargar usuarios (${response.code()}): ${response.message()}. ${errorBody?.take(100) ?: ""}"
+                    }
+                }
+            } catch (e: Exception) {
+                println("ERROR: Exception loading users: ${e.message}")
+                println("ERROR: Exception type: ${e.javaClass.simpleName}")
+                e.printStackTrace()
+                _users.value = emptyList()
+                _usersError.value = "Error de conexión: ${e.message}"
+                if (e.message?.contains("Json") == true || e.message?.contains("parse") == true) {
+                    _usersError.value = "Error al procesar la respuesta del servidor. Verifica el formato de datos."
+                }
+            } finally {
+                _loadingUsers.value = false
+            }
+        }
+    }
+    
+    fun loadSupportUsers() {
         val token = _uiState.value.accessToken ?: return
         viewModelScope.launch {
             try {
@@ -234,6 +322,71 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+    
+    fun deleteUser(
+        userId: Int,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.deleteUser(token, userId)
+                if (response.isSuccessful) {
+                    loadUsers() // Recargar lista
+                    onSuccess()
+                } else {
+                    onError(response.message() ?: "Error al eliminar usuario")
+                }
+            } catch (e: Exception) {
+                onError("Error de conexión: ${e.message}")
+            }
+        }
+    }
+    
+    fun updateUserRole(
+        userId: Int,
+        role: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.updateUserRole(token, userId, role)
+                if (response.isSuccessful) {
+                    loadUsers() // Recargar lista
+                    onSuccess()
+                } else {
+                    onError(response.message() ?: "Error al actualizar rol")
+                }
+            } catch (e: Exception) {
+                onError("Error de conexión: ${e.message}")
+            }
+        }
+    }
+    
+    fun toggleUserActivation(
+        userId: Int,
+        isActive: Boolean,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.toggleUserActivation(token, userId, isActive)
+                if (response.isSuccessful) {
+                    loadUsers() // Recargar lista
+                    onSuccess()
+                } else {
+                    onError(response.message() ?: "Error al cambiar estado del usuario")
+                }
+            } catch (e: Exception) {
+                onError("Error de conexión: ${e.message}")
             }
         }
     }
@@ -328,6 +481,76 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
         _tickets.value = emptyList()
         _currentUser.value = null
         _attachments.value = emptyList()
+        _comments.value = emptyList()
+    }
+    
+    // Comments
+    private val _comments = MutableStateFlow<List<Comment>>(emptyList())
+    val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
+    
+    private val _loadingComments = MutableStateFlow(false)
+    val loadingComments: StateFlow<Boolean> = _loadingComments.asStateFlow()
+    
+    fun loadComments(ticketId: Int) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            _loadingComments.value = true
+            try {
+                val response = repository.getTicketComments(token, ticketId)
+                if (response.isSuccessful) {
+                    _comments.value = response.body()?.comments ?: emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _loadingComments.value = false
+            }
+        }
+    }
+    
+    fun createComment(
+        ticketId: Int,
+        text: String,
+        isPrivate: Boolean = false,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.createComment(token, ticketId, text, isPrivate)
+                if (response.isSuccessful) {
+                    loadComments(ticketId) // Recargar comentarios
+                    onSuccess()
+                } else {
+                    onError(response.message() ?: "Error al crear comentario")
+                }
+            } catch (e: Exception) {
+                onError("Error de conexión: ${e.message}")
+            }
+        }
+    }
+    
+    fun deleteComment(
+        ticketId: Int,
+        commentId: Int,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.deleteComment(token, ticketId, commentId)
+                if (response.isSuccessful) {
+                    loadComments(ticketId) // Recargar comentarios
+                    onSuccess()
+                } else {
+                    onError(response.message() ?: "Error al eliminar comentario")
+                }
+            } catch (e: Exception) {
+                onError("Error de conexión: ${e.message}")
+            }
+        }
     }
 }
 

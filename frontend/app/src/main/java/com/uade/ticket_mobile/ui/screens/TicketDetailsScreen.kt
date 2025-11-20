@@ -43,7 +43,7 @@ import coil.request.ImageRequest
 import com.uade.ticket_mobile.data.models.Ticket
 import com.uade.ticket_mobile.data.models.TicketPriority
 import com.uade.ticket_mobile.data.models.TicketStatus
-import com.uade.ticket_mobile.data.mock.MockData
+import com.uade.ticket_mobile.data.models.Comment
 import com.uade.ticket_mobile.ui.theme.AccentOrange
 import com.uade.ticket_mobile.ui.theme.ErrorRed
 import com.uade.ticket_mobile.ui.theme.SuccessGreen
@@ -69,22 +69,28 @@ fun TicketDetailsScreen(
     var newComment by remember { mutableStateOf("") }
     var showPublicComments by remember { mutableStateOf(true) }
     var showPrivateComments by remember { mutableStateOf(false) }
+    var isPrivateComment by remember { mutableStateOf(false) }
     
-    val publicComments = MockData.mockComments.filter { 
-        it.ticketId == ticket.id && !it.isPrivate 
-    }
-    val privateComments = MockData.mockComments.filter { 
-        it.ticketId == ticket.id && it.isPrivate 
-    }
-    
-    // State para attachments
+    // State para attachments y comentarios
     val attachments by viewModel.attachments.collectAsState()
     val uploadingAttachment by viewModel.uploadingAttachment.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
+    val comments by viewModel.comments.collectAsState()
+    val loadingComments by viewModel.loadingComments.collectAsState()
     
-    // Cargar attachments al inicio
+    // Filtrar comentarios públicos y privados
+    val publicComments = comments.filter { !it.isPrivate }
+    val privateComments = comments.filter { it.isPrivate }
+    
+    // Verificar si el usuario puede crear comentarios privados (solo admin y soporte)
+    val canCreatePrivateComments = currentUser?.let { user ->
+        user.role == "sysAdmin" || user.role == "support"
+    } ?: false
+    
+    // Cargar attachments y comentarios al inicio
     LaunchedEffect(ticket.id) {
         viewModel.loadAttachments(ticket.id)
+        viewModel.loadComments(ticket.id)
     }
     
     // Launcher para seleccionar archivo
@@ -487,71 +493,154 @@ fun TicketDetailsScreen(
                             modifier = Modifier.weight(1f)
                         )
                         
-                        Spacer(modifier = Modifier.width(8.dp))
-                        
-                        FilterChip(
-                            onClick = { 
-                                showPublicComments = false
-                                showPrivateComments = true
-                            },
-                            label = { Text("Comentarios privados") },
-                            selected = showPrivateComments,
-                            modifier = Modifier.weight(1f)
-                        )
+                        // Solo mostrar tab de comentarios privados si el usuario tiene permisos
+                        if (canCreatePrivateComments) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            FilterChip(
+                                onClick = { 
+                                    showPublicComments = false
+                                    showPrivateComments = true
+                                },
+                                label = { Text("Comentarios privados") },
+                                selected = showPrivateComments,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     // Lista de comentarios
-                    if (showPublicComments) {
-                        Text(
-                            text = "Visibles para usuarios y administradores del ticket",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(bottom = 12.dp)
+                    if (loadingComments) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.CenterHorizontally)
                         )
-                        
-                        publicComments.forEach { comment ->
-                            CommentItem(comment = comment)
-                            Spacer(modifier = Modifier.height(8.dp))
+                    } else {
+                        if (showPublicComments) {
+                            Text(
+                                text = "Visibles para usuarios y administradores del ticket",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            if (publicComments.isEmpty()) {
+                                Text(
+                                    text = "No hay comentarios públicos",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            } else {
+                                publicComments.forEach { comment ->
+                                    CommentItem(comment = comment)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                            }
                         }
-                    }
-                    
-                    if (showPrivateComments) {
-                        Text(
-                            text = "Visibles para agentes y administradores del ticket",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
                         
-                        privateComments.forEach { comment ->
-                            CommentItem(comment = comment, isPrivate = true)
-                            Spacer(modifier = Modifier.height(8.dp))
+                        if (showPrivateComments) {
+                            Text(
+                                text = "Visibles solo para agentes de soporte y administradores",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            if (!canCreatePrivateComments) {
+                                Text(
+                                    text = "Solo el personal de soporte y administradores pueden ver comentarios privados",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            } else {
+                                if (privateComments.isEmpty()) {
+                                    Text(
+                                        text = "No hay comentarios privados",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                } else {
+                                    privateComments.forEach { comment ->
+                                        CommentItem(comment = comment, isPrivate = true)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                }
+                            }
                         }
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // Campo para nuevo comentario
-                    OutlinedTextField(
-                        value = newComment,
-                        onValueChange = { newComment = it },
-                        label = { Text("Agregar comentario...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 3,
-                        maxLines = 5,
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { 
-                                    // TODO: Agregar comentario
-                                    newComment = ""
-                                }
+                    // Campo para nuevo comentario (solo si el usuario puede comentar)
+                    if (currentUser != null) {
+                        // Checkbox para comentario privado (solo para admin y soporte)
+                        if (canCreatePrivateComments) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Send, contentDescription = "Enviar")
+                                Checkbox(
+                                    checked = isPrivateComment,
+                                    onCheckedChange = { isPrivateComment = it }
+                                )
+                                Text(
+                                    text = "Comentario privado (solo visible para soporte y administradores)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
                             }
                         }
-                    )
+                        
+                        OutlinedTextField(
+                            value = newComment,
+                            onValueChange = { newComment = it },
+                            label = { Text("Agregar comentario...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            maxLines = 5,
+                            enabled = !loadingComments,
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        if (newComment.isNotBlank()) {
+                                            viewModel.createComment(
+                                                ticketId = ticket.id,
+                                                text = newComment.trim(),
+                                                isPrivate = isPrivateComment && canCreatePrivateComments,
+                                                onSuccess = {
+                                                    newComment = ""
+                                                    isPrivateComment = false
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Comentario agregado exitosamente",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                },
+                                                onError = { error ->
+                                                    Toast.makeText(
+                                                        context,
+                                                        error,
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            )
+                                        }
+                                    },
+                                    enabled = newComment.isNotBlank() && !loadingComments
+                                ) {
+                                    Icon(Icons.Default.Send, contentDescription = "Enviar")
+                                }
+                            }
+                        )
+                    }
                 }
             }
             
@@ -715,7 +804,7 @@ fun TicketDetailsScreen(
 
 @Composable
 fun CommentItem(
-    comment: MockData.TicketComment,
+    comment: Comment,
     isPrivate: Boolean = false
 ) {
     Row(
@@ -728,7 +817,7 @@ fun CommentItem(
                 .size(32.dp)
                 .clip(CircleShape)
                 .background(
-                    if (isPrivate) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    if (comment.isPrivate) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                     else MaterialTheme.colorScheme.primary
                 ),
             contentAlignment = Alignment.Center
@@ -753,12 +842,12 @@ fun CommentItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${comment.author.firstName} ${comment.author.lastName}".trim(),
+                    text = "${comment.author.firstName ?: ""} ${comment.author.lastName ?: ""}".trim(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 
-                if (isPrivate) {
+                if (comment.isPrivate) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
@@ -784,7 +873,7 @@ fun CommentItem(
             Spacer(modifier = Modifier.height(4.dp))
             
             Text(
-                text = comment.content,
+                text = comment.text,
                 style = MaterialTheme.typography.bodyMedium
             )
         }

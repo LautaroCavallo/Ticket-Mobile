@@ -12,14 +12,35 @@ object ApiClient {
     private const val BASE_URL = "http://10.0.2.2:8000/api/" // Para emulador Android
     
     private val gson: Gson = GsonBuilder()
-        .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        .setLenient()
         .create()
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
     
+    private val debugInterceptor = okhttp3.Interceptor { chain ->
+        val request = chain.request()
+        val response = chain.proceed(request)
+        
+        // Log the raw response for /api/users/
+        if (request.url.encodedPath.contains("/users/")) {
+            val responseBody = response.body
+            val source = responseBody?.source()
+            source?.request(Long.MAX_VALUE) // Buffer the entire body
+            val buffer = source?.buffer
+            
+            val responseBodyString = buffer?.clone()?.readString(Charsets.UTF_8)
+            println("=== RAW API RESPONSE for ${request.url} ===")
+            println(responseBodyString)
+            println("=== END RAW RESPONSE ===")
+        }
+        
+        response
+    }
+    
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(debugInterceptor)
         .addInterceptor(loggingInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)

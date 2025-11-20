@@ -87,6 +87,42 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<PagedResponse<User>>
     
+    @GET("users/")
+    suspend fun getUsers(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 1,
+        @Query("page_size") pageSize: Int = 20,
+        @Query("role") role: String? = null,
+        @Query("is_active") isActive: String? = null,
+        @Query("search") search: String? = null
+    ): Response<PagedResponse<User>>
+    
+    @GET("users/{id}/")
+    suspend fun getUserDetail(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<User>
+    
+    @PATCH("users/{id}/role/")
+    suspend fun updateUserRole(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int,
+        @Body request: UserRoleUpdateRequest
+    ): Response<UserRoleUpdateResponse>
+    
+    @PATCH("users/{id}/activation/")
+    suspend fun toggleUserActivation(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int,
+        @Body request: UserActivationRequest
+    ): Response<UserActivationResponse>
+    
+    @DELETE("users/{id}/delete/")
+    suspend fun deleteUser(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<Unit>
+    
     // Attachments
     @GET("tickets/{ticket_id}/attachments/")
     suspend fun getTicketAttachments(
@@ -130,6 +166,27 @@ interface ApiService {
     suspend fun getSystemHealth(
         @Header("Authorization") token: String
     ): Response<SystemHealthResponse>
+    
+    // Comments
+    @GET("tickets/{ticket_id}/comments/")
+    suspend fun getTicketComments(
+        @Header("Authorization") token: String,
+        @Path("ticket_id") ticketId: Int
+    ): Response<CommentListResponse>
+    
+    @POST("tickets/{ticket_id}/comments/create/")
+    suspend fun createComment(
+        @Header("Authorization") token: String,
+        @Path("ticket_id") ticketId: Int,
+        @Body request: CommentCreateRequest
+    ): Response<CommentCreateResponse>
+    
+    @DELETE("tickets/{ticket_id}/comments/{comment_id}/delete/")
+    suspend fun deleteComment(
+        @Header("Authorization") token: String,
+        @Path("ticket_id") ticketId: Int,
+        @Path("comment_id") commentId: Int
+    ): Response<Unit>
 }
 
 data class TokenResponse(

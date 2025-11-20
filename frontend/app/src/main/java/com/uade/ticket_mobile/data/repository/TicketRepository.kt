@@ -181,6 +181,49 @@ class TicketRepository(context: Context? = null) {
         return apiService.getSupportUsers("Bearer $token")
     }
     
+    // User Management (Admin only)
+    suspend fun getUsers(
+        token: String,
+        page: Int = 1,
+        pageSize: Int = 20,
+        role: String? = null,
+        isActive: Boolean? = null,
+        search: String? = null
+    ): Response<PagedResponse<User>> {
+        // Convertir Boolean a String para el query param
+        val isActiveString = isActive?.toString()?.lowercase()
+        val response = apiService.getUsers("Bearer $token", page, pageSize, role, isActiveString, search)
+        
+        // Debug: Log raw response
+        if (!response.isSuccessful) {
+            println("ERROR: getUsers failed with code ${response.code()}")
+            try {
+                val errorBody = response.errorBody()?.string()
+                println("ERROR: Error body: $errorBody")
+            } catch (e: Exception) {
+                println("ERROR: Could not read error body: ${e.message}")
+            }
+        }
+        
+        return response
+    }
+    
+    suspend fun getUserDetail(token: String, userId: Int): Response<User> {
+        return apiService.getUserDetail("Bearer $token", userId)
+    }
+    
+    suspend fun updateUserRole(token: String, userId: Int, role: String): Response<UserRoleUpdateResponse> {
+        return apiService.updateUserRole("Bearer $token", userId, UserRoleUpdateRequest(role))
+    }
+    
+    suspend fun toggleUserActivation(token: String, userId: Int, isActive: Boolean): Response<UserActivationResponse> {
+        return apiService.toggleUserActivation("Bearer $token", userId, UserActivationRequest(isActive))
+    }
+    
+    suspend fun deleteUser(token: String, userId: Int): Response<Unit> {
+        return apiService.deleteUser("Bearer $token", userId)
+    }
+    
     // Attachments
     suspend fun getTicketAttachments(token: String, ticketId: Int): Response<AttachmentListResponse> {
         return apiService.getTicketAttachments("Bearer $token", ticketId)
@@ -236,5 +279,27 @@ class TicketRepository(context: Context? = null) {
     
     suspend fun getSystemHealth(token: String): Response<SystemHealthResponse> {
         return apiService.getSystemHealth("Bearer $token")
+    }
+    
+    // Comments
+    suspend fun getTicketComments(token: String, ticketId: Int): Response<CommentListResponse> {
+        return apiService.getTicketComments("Bearer $token", ticketId)
+    }
+    
+    suspend fun createComment(
+        token: String,
+        ticketId: Int,
+        text: String,
+        isPrivate: Boolean = false
+    ): Response<CommentCreateResponse> {
+        return apiService.createComment(
+            "Bearer $token",
+            ticketId,
+            CommentCreateRequest(text, isPrivate)
+        )
+    }
+    
+    suspend fun deleteComment(token: String, ticketId: Int, commentId: Int): Response<Unit> {
+        return apiService.deleteComment("Bearer $token", ticketId, commentId)
     }
 }

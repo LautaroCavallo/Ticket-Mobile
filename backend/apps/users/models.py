@@ -54,9 +54,7 @@ class User(AbstractUser):
         return dict(self.ROLE_CHOICES).get(self.role, self.role)
     
     def save(self, *args, **kwargs):
-        # Update last_login when user logs in
-        if self.pk:
-            old_user = User.objects.get(pk=self.pk)
-            if old_user.last_login != self.last_login:
-                self.last_login = timezone.now()
+        # Ensure email is lowercase
+        if self.email:
+            self.email = self.email.lower()
         super().save(*args, **kwargs)

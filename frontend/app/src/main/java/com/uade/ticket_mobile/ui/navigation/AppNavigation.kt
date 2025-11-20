@@ -185,6 +185,7 @@ fun AppNavigation(
         // Rutas de administrador
         composable("user_management") {
             UserManagementScreen(
+                viewModel = viewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

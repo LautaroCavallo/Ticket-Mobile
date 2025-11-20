@@ -28,10 +28,10 @@ class UserPagination(PageNumberPagination):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsAdminUser])
+@permission_classes([IsAuthenticated])
 def list_users_view(request):
     """
-    List all users (admin only).
+    List all users (any authenticated user can view).
     GET /api/users/
     
     Query params:

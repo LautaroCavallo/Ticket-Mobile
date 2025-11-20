@@ -7,14 +7,24 @@ data class User(
     val username: String? = null,
     val email: String,
     @SerializedName("firstName")
-    val firstName: String?,
+    val firstName: String? = null,
     @SerializedName("lastName")
-    val lastName: String?,
+    val lastName: String? = null,
+    @SerializedName("fullName")
+    val fullName: String? = null,
+    @SerializedName("displayRole")
+    val displayRole: String? = null,
     @SerializedName("isStaff")
     val isStaff: Boolean = false,
     @SerializedName("isSuperuser")
     val isSuperuser: Boolean = false,
-    val role: String? = null
+    @SerializedName("isActive")
+    val isActive: Boolean = true,
+    val role: String? = null,
+    @SerializedName("createdAt")
+    val createdAt: String? = null,
+    @SerializedName("lastLogin")
+    val lastLogin: String? = null
 )
 
 data class UserLoginRequest(
@@ -57,4 +67,23 @@ data class ChangePasswordRequest(
     val currentPassword: String,
     @SerializedName("newPassword")
     val newPassword: String
+)
+
+data class UserRoleUpdateRequest(
+    val role: String
+)
+
+data class UserRoleUpdateResponse(
+    val msg: String? = null,
+    val user: User
+)
+
+data class UserActivationRequest(
+    @SerializedName("isActive")
+    val isActive: Boolean
+)
+
+data class UserActivationResponse(
+    val msg: String? = null,
+    val user: User
 )

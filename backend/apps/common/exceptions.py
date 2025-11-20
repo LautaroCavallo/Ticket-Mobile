@@ -5,6 +5,7 @@ from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
+from django.conf import settings
 
 
 def custom_exception_handler(exc, context):
@@ -24,6 +25,28 @@ def custom_exception_handler(exc, context):
         }
         
         response.data = error_response
+    else:
+        # Handle unhandled exceptions (500 errors)
+        # This ensures all errors return JSON instead of HTML
+        import traceback
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.error(f"Unhandled exception: {exc}", exc_info=True)
+        
+        error_response = {
+            'error': 'Error interno del servidor',
+            'details': {
+                'message': str(exc) if settings.DEBUG else 'Ha ocurrido un error inesperado'
+            },
+            'timestamp': timezone.now().isoformat(),
+            'status_code': 500
+        }
+        
+        if settings.DEBUG:
+            error_response['details']['traceback'] = traceback.format_exc()
+        
+        response = Response(error_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     return response
 

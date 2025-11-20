@@ -5,17 +5,33 @@ Django settings for helpdesk project.
 from pathlib import Path
 import os
 from datetime import timedelta
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-your-secret-key-here-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2']
+# Permitir Railway, Render y localhost
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,10.0.2.2').split(',')
+
+# Agregar dominio de Railway automáticamente
+railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+if railway_domain and railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(railway_domain)
+
+# Agregar dominio de Render automáticamente
+render_domain = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_domain and render_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_domain)
+
+# Agregar dominios comodín en producción
+if not DEBUG:
+    ALLOWED_HOSTS.extend(['.railway.app', '.onrender.com'])
 
 # Application definition
 DJANGO_APPS = [
@@ -31,6 +47,8 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 LOCAL_APPS = [
@@ -49,6 +67,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Para servir archivos estáticos en producción
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -78,12 +97,23 @@ TEMPLATES = [
 WSGI_APPLICATION = 'helpdesk.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# En producción usa PostgreSQL (Railway), en desarrollo usa SQLite
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -110,10 +140,29 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Cloudinary configuration (para almacenamiento de imágenes en la nube)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+}
+
+# Usar Cloudinary solo si está configurado, sino usar almacenamiento local
+if all([
+    CLOUDINARY_STORAGE['CLOUD_NAME'],
+    CLOUDINARY_STORAGE['API_KEY'],
+    CLOUDINARY_STORAGE['API_SECRET']
+]):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    # Almacenamiento local para desarrollo
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -171,14 +220,9 @@ SIMPLE_JWT = {
 }
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://10.0.2.2:3000",
-]
-
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only for development
-
+# Permitir todas las peticiones en desarrollo y producción (para apps móviles)
+# Las apps móviles pueden hacer requests desde cualquier lugar
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_HEADERS = [

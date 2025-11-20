@@ -9,14 +9,18 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://10.0.2.2:8000/api/" // Para emulador Android
+    private val BASE_URL = ApiConfig.BASE_URL // Configurado en ApiConfig.kt
     
     private val gson: Gson = GsonBuilder()
         .setLenient()
         .create()
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (ApiConfig.DEBUG_MODE) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.BASIC
+        }
     }
     
     private val debugInterceptor = okhttp3.Interceptor { chain ->

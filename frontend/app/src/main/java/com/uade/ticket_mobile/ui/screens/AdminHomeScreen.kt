@@ -127,14 +127,16 @@ fun AdminHomeScreen(
                         ) {
                             Text(
                                 text = title,
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
                                 color = when (index) {
                                     0 -> if (selectedTabIndex == 0) AccentOrange else MaterialTheme.colorScheme.onBackground
                                     1 -> if (selectedTabIndex == 1) SuccessGreen else MaterialTheme.colorScheme.onBackground
                                     2 -> if (selectedTabIndex == 2) ErrorRed else MaterialTheme.colorScheme.onBackground
                                     else -> MaterialTheme.colorScheme.onBackground
                                 },
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }

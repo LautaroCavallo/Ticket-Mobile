@@ -62,20 +62,19 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     
     // CameraX - Solución oficial de Google para cámara
-    val cameraxVersion = "1.3.1"
-    implementation("androidx.camera:camera-core:$cameraxVersion")
-    implementation("androidx.camera:camera-camera2:$cameraxVersion")
-    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
-    implementation("androidx.camera:camera-view:$cameraxVersion")
+    implementation("androidx.camera:camera-core:1.3.1")
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
     
     // Accompanist Permissions - Manejo de permisos en Compose
-    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.35.0-alpha")
     
     // Coil - Carga de imágenes optimizada
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
     
-    // OkHttp para logging de requests multipart (debug)
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    // ExifInterface - Para rotar imágenes según orientación
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

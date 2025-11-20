@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 
 class TicketViewModel : ViewModel() {
     private val repository = TicketRepository()
@@ -73,13 +74,12 @@ class TicketViewModel : ViewModel() {
         }
     }
     
-    fun createTicket(title: String, description: String, priority: String) {
+    fun createTicket(title: String, description: String, priority: String, imageFile: File? = null) {
         val token = _uiState.value.accessToken ?: "mock_token"
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, ticketCreatedSuccessfully = false)
             try {
-                val request = TicketCreateRequest(title, description, priority)
-                val response = repository.createTicket(token, request)
+                val response = repository.createTicket(token, title, description, priority, imageFile)
                 if (response.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -217,10 +217,114 @@ class TicketViewModel : ViewModel() {
         return _tickets.value.filter { it.status == status }
     }
     
+    // Users
+    private val _users = MutableStateFlow<List<User>>(emptyList())
+    val users: StateFlow<List<User>> = _users.asStateFlow()
+    
+    fun loadUsers() {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.getSupportUsers(token)
+                if (response.isSuccessful) {
+                    _users.value = response.body()?.results ?: emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    fun updateTicket(ticketId: Int, request: TicketUpdateRequest, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                val response = repository.updateTicket(token, ticketId, request)
+                if (response.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    loadTickets()
+                    onSuccess()
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = response.message() ?: "Error al actualizar ticket"
+                    )
+                    onError(response.message() ?: "Error al actualizar ticket")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Error de conexión: ${e.message}"
+                )
+                onError("Error de conexión: ${e.message}")
+            }
+        }
+    }
+    
+    // Attachments
+    private val _attachments = MutableStateFlow<List<Attachment>>(emptyList())
+    val attachments: StateFlow<List<Attachment>> = _attachments.asStateFlow()
+    
+    private val _uploadingAttachment = MutableStateFlow(false)
+    val uploadingAttachment: StateFlow<Boolean> = _uploadingAttachment.asStateFlow()
+    
+    fun loadAttachments(ticketId: Int) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.getTicketAttachments(token, ticketId)
+                if (response.isSuccessful) {
+                    _attachments.value = response.body()?.attachments ?: emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    fun uploadAttachment(ticketId: Int, file: File, isPrivate: Boolean = false, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            _uploadingAttachment.value = true
+            try {
+                val response = repository.uploadAttachment(token, ticketId, file, isPrivate)
+                if (response.isSuccessful) {
+                    loadAttachments(ticketId)
+                    onSuccess()
+                } else {
+                    onError(response.message() ?: "Error al subir archivo")
+                }
+            } catch (e: Exception) {
+                onError("Error de conexión: ${e.message}")
+            } finally {
+                _uploadingAttachment.value = false
+            }
+        }
+    }
+    
+    fun deleteAttachment(ticketId: Int, attachmentId: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val token = _uiState.value.accessToken ?: return
+        viewModelScope.launch {
+            try {
+                val response = repository.deleteAttachment(token, ticketId, attachmentId)
+                if (response.isSuccessful) {
+                    loadAttachments(ticketId)
+                    onSuccess()
+                } else {
+                    onError(response.message() ?: "Error al eliminar archivo")
+                }
+            } catch (e: Exception) {
+                onError("Error de conexión: ${e.message}")
+            }
+        }
+    }
+    
     fun logout() {
         _uiState.value = TicketUiState()
         _tickets.value = emptyList()
         _currentUser.value = null
+        _attachments.value = emptyList()
     }
 }
 

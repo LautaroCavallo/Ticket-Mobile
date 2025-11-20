@@ -202,7 +202,8 @@ fun AppNavigation(
                 },
                 onEditTicket = { ticketToEdit ->
                     navController.navigate("edit_ticket/${ticketToEdit.id}")
-                }
+                },
+                viewModel = viewModel
             )
         }
         
@@ -217,9 +218,9 @@ fun AppNavigation(
                     navController.popBackStack()
                 },
                 onSaveChanges = { updatedTicket ->
-                    // TODO: Implementar actualización del ticket en el ViewModel
                     navController.popBackStack()
-                }
+                },
+                viewModel = viewModel
             )
         }
     }

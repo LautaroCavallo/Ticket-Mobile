@@ -39,7 +39,10 @@ class AttachmentSerializer(serializers.ModelSerializer):
         if obj.file and hasattr(obj.file, 'url'):
             if request:
                 return request.build_absolute_uri(obj.file.url)
-            return obj.file.url
+            # Fallback: construir URL con configuración por defecto
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'http://10.0.2.2:8000')
+            return f"{base_url}{obj.file.url}"
         return None
 
 

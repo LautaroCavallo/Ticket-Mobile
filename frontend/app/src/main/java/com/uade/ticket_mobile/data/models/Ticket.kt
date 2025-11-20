@@ -13,7 +13,9 @@ data class Ticket(
     @SerializedName("updatedAt")
     val updatedAt: String,
     val creator: User,
-    val assignee: User?
+    val assignee: User?,
+    @SerializedName("imageUrl")
+    val imageUrl: String? = null
 )
 
 enum class TicketStatus {

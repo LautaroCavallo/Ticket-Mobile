@@ -65,20 +65,15 @@ class TicketRepository(context: Context? = null) {
         priority: String? = null,
         page: Int = 1
     ): Response<PagedResponse<Ticket>> {
-        return try {
-            val response = apiService.getTickets("Bearer $token", status, priority, page)
-            
-            // Si la respuesta es exitosa, guardar en caché
-            if (response.isSuccessful && response.body() != null) {
-                val tickets = response.body()!!.results
-                ticketDao?.insertTickets(tickets.map { TicketEntity.fromTicket(it) })
-            }
-            
-            response
-        } catch (e: Exception) {
-            // Si falla la conexión, intentar cargar desde caché
-            response
+        val response = apiService.getTickets("Bearer $token", status, priority, page)
+        
+        // Si la respuesta es exitosa, guardar en caché
+        if (response.isSuccessful && response.body() != null) {
+            val tickets = response.body()!!.results
+            ticketDao?.insertTickets(tickets.map { TicketEntity.fromTicket(it) })
         }
+        
+        return response
     }
     
     /**

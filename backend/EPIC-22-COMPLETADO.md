@@ -3,7 +3,7 @@
 **Estado:** ✅ Finalizado  
 **Branch:** `epic-22-backend-completo`  
 **Responsable:** Backend (Tomás Liñeiro) / Product Owner (Lautaro Cavallo)  
-**Fecha:** Noviembre 2024
+**Fecha:** Noviembre 2025
 
 ---
 
@@ -370,5 +370,5 @@ API disponible en: `http://localhost:8000`
 **Versión:** 1.0  
 **Estado:** ✅ Epic Completada  
 **Branch:** `epic-22-backend-completo`  
-**Fecha:** Noviembre 2024
+**Fecha:** Noviembre 2025
 

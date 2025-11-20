@@ -1,16 +1,22 @@
 package com.uade.ticket_mobile.data.repository
 
+import android.content.Context
 import com.uade.ticket_mobile.data.api.ApiClient
+import com.uade.ticket_mobile.data.local.AppDatabase
+import com.uade.ticket_mobile.data.local.entities.TicketEntity
 import com.uade.ticket_mobile.data.models.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import retrofit2.Response
 import java.io.File
 
-class TicketRepository {
+class TicketRepository(context: Context? = null) {
     private val apiService = ApiClient.apiService
+    private val ticketDao = context?.let { AppDatabase.getDatabase(it).ticketDao() }
     
     suspend fun login(username: String, password: String): Response<UserLoginResponse> {
         return apiService.login(UserLoginRequest(username, password))
@@ -59,7 +65,38 @@ class TicketRepository {
         priority: String? = null,
         page: Int = 1
     ): Response<PagedResponse<Ticket>> {
-        return apiService.getTickets("Bearer $token", status, priority, page)
+        return try {
+            val response = apiService.getTickets("Bearer $token", status, priority, page)
+            
+            // Si la respuesta es exitosa, guardar en caché
+            if (response.isSuccessful && response.body() != null) {
+                val tickets = response.body()!!.results
+                ticketDao?.insertTickets(tickets.map { TicketEntity.fromTicket(it) })
+            }
+            
+            response
+        } catch (e: Exception) {
+            // Si falla la conexión, intentar cargar desde caché
+            response
+        }
+    }
+    
+    /**
+     * Get tickets from local cache (offline mode)
+     */
+    fun getTicketsFromCache(): Flow<List<Ticket>>? {
+        return ticketDao?.getAllTickets()?.map { entities ->
+            entities.map { it.toTicket() }
+        }
+    }
+    
+    /**
+     * Get tickets by status from cache
+     */
+    fun getTicketsFromCacheByStatus(status: String): Flow<List<Ticket>>? {
+        return ticketDao?.getTicketsByStatus(status)?.map { entities ->
+            entities.map { it.toTicket() }
+        }
     }
     
     suspend fun getTicket(token: String, id: Int): Response<Ticket> {
@@ -84,13 +121,20 @@ class TicketRepository {
             MultipartBody.Part.createFormData("image", it.name, requestFile)
         }
         
-        return apiService.createTicket(
+        val response = apiService.createTicket(
             "Bearer $token",
             titleBody,
             descriptionBody,
             priorityBody,
             imagePart
         )
+        
+        // Guardar en caché si fue exitoso
+        if (response.isSuccessful && response.body() != null) {
+            ticketDao?.insertTicket(TicketEntity.fromTicket(response.body()!!))
+        }
+        
+        return response
     }
     
     suspend fun updateTicket(token: String, id: Int, request: TicketUpdateRequest): Response<Ticket> {
@@ -98,7 +142,21 @@ class TicketRepository {
     }
     
     suspend fun deleteTicket(token: String, id: Int): Response<Unit> {
-        return apiService.deleteTicket("Bearer $token", id)
+        val response = apiService.deleteTicket("Bearer $token", id)
+        
+        // Eliminar de caché si fue exitoso
+        if (response.isSuccessful) {
+            ticketDao?.deleteTicketById(id)
+        }
+        
+        return response
+    }
+    
+    /**
+     * Clear all cached tickets
+     */
+    suspend fun clearCache() {
+        ticketDao?.deleteAllTickets()
     }
     
     suspend fun getCategories(token: String): Response<List<TicketCategory>> {
@@ -147,5 +205,22 @@ class TicketRepository {
     
     suspend fun deleteAttachment(token: String, ticketId: Int, attachmentId: Int): Response<Unit> {
         return apiService.deleteAttachment("Bearer $token", ticketId, attachmentId)
+    }
+    
+    // Metrics methods
+    suspend fun getTicketsOverview(token: String): Response<TicketsOverviewResponse> {
+        return apiService.getTicketsOverview("Bearer $token")
+    }
+    
+    suspend fun getTicketsPerformance(token: String): Response<TicketsPerformanceResponse> {
+        return apiService.getTicketsPerformance("Bearer $token")
+    }
+    
+    suspend fun getUsersActivity(token: String): Response<UsersActivityResponse> {
+        return apiService.getUsersActivity("Bearer $token")
+    }
+    
+    suspend fun getSystemHealth(token: String): Response<SystemHealthResponse> {
+        return apiService.getSystemHealth("Bearer $token")
     }
 }

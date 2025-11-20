@@ -3,25 +3,16 @@ package com.uade.ticket_mobile.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.uade.ticket_mobile.ui.screens.MockInfoScreen
-import com.uade.ticket_mobile.ui.screens.LoginScreen
-import com.uade.ticket_mobile.ui.screens.RegisterScreen
-import com.uade.ticket_mobile.ui.screens.ForgotPasswordScreen
-import com.uade.ticket_mobile.ui.screens.TicketListScreen
-import com.uade.ticket_mobile.ui.screens.CreateTicketScreen
-import com.uade.ticket_mobile.ui.screens.ProfileScreen
-import com.uade.ticket_mobile.ui.screens.ChangePasswordScreen
-import com.uade.ticket_mobile.ui.screens.AdminHomeScreen
-import com.uade.ticket_mobile.ui.screens.UserManagementScreen
-import com.uade.ticket_mobile.ui.screens.StatisticsScreen
-import com.uade.ticket_mobile.ui.screens.TicketDetailsScreen
-import com.uade.ticket_mobile.ui.screens.EditTicketScreen
+import com.uade.ticket_mobile.ui.screens.*
 import com.uade.ticket_mobile.ui.viewmodel.TicketViewModel
+import com.uade.ticket_mobile.utils.PreferencesManager
 
 @Composable
 fun AppNavigation(
@@ -29,12 +20,32 @@ fun AppNavigation(
     viewModel: TicketViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val prefsManager = remember { PreferencesManager(context) }
     
-    // Para mockup, iniciamos con información del demo
+    // Determinar pantalla inicial
+    val startDestination = if (prefsManager.isOnboardingCompleted()) {
+        "mock_info"
+    } else {
+        "onboarding"
+    }
+    
     NavHost(
         navController = navController,
-        startDestination = "mock_info"
+        startDestination = startDestination
     ) {
+        // Onboarding (primera vez)
+        composable("onboarding") {
+            OnboardingScreen(
+                onFinish = {
+                    prefsManager.setOnboardingCompleted(true)
+                    navController.navigate("mock_info") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
+            )
+        }
+        
         composable("mock_info") {
             MockInfoScreen(
                 onContinue = {
@@ -184,6 +195,7 @@ fun AppNavigation(
         
         composable("statistics") {
             StatisticsScreen(
+                ticketViewModel = viewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

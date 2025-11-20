@@ -1474,6 +1474,6 @@ Authorization: Bearer {accessToken}
 ---
 
 **Versión:** 1.0  
-**Última Actualización:** Noviembre 2024  
+**Última Actualización:** Noviembre 2025  
 **Mantenido por:** Equipo de Desarrollo
 

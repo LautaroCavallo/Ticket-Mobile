@@ -1,7 +1,7 @@
 # 📘 Manual del Desarrollador - Sistema de Tickets
 
 **Versión:** 1.0  
-**Fecha:** Noviembre 2024  
+**Fecha:** Noviembre 2025  
 **Estado:** Producción
 
 ---
@@ -966,6 +966,6 @@ GitHub: https://github.com/LautaroCavallo/Ticket-Mobile/issues
 ---
 
 **Versión del Manual:** 1.0  
-**Última Actualización:** Noviembre 2024  
+**Última Actualización:** Noviembre 2025  
 **Mantenido por:** Equipo de Desarrollo
 

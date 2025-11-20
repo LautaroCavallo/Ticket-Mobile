@@ -109,6 +109,27 @@ interface ApiService {
         @Path("ticket_id") ticketId: Int,
         @Path("attachment_id") attachmentId: Int
     ): Response<Unit>
+    
+    // Metrics
+    @GET("metrics/tickets/overview/")
+    suspend fun getTicketsOverview(
+        @Header("Authorization") token: String
+    ): Response<TicketsOverviewResponse>
+    
+    @GET("metrics/tickets/performance/")
+    suspend fun getTicketsPerformance(
+        @Header("Authorization") token: String
+    ): Response<TicketsPerformanceResponse>
+    
+    @GET("metrics/users/activity/")
+    suspend fun getUsersActivity(
+        @Header("Authorization") token: String
+    ): Response<UsersActivityResponse>
+    
+    @GET("metrics/system/health/")
+    suspend fun getSystemHealth(
+        @Header("Authorization") token: String
+    ): Response<SystemHealthResponse>
 }
 
 data class TokenResponse(

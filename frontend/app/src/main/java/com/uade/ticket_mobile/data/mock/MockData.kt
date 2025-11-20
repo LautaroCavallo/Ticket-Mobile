@@ -44,8 +44,7 @@ object MockData {
             createdAt = "2024-03-23T10:30:00Z",
             updatedAt = "2024-03-23T10:30:00Z",
             creator = mockUser,
-            assignee = null,
-            category = mockCategories[1]
+            assignee = null
         ),
         Ticket(
             id = 2,
@@ -56,8 +55,7 @@ object MockData {
             createdAt = "2024-03-22T14:15:00Z",
             updatedAt = "2024-03-23T09:00:00Z",
             creator = mockUser,
-            assignee = mockAdminUser,
-            category = mockCategories[0]
+            assignee = mockAdminUser
         ),
         Ticket(
             id = 3,
@@ -68,8 +66,7 @@ object MockData {
             createdAt = "2024-03-20T11:00:00Z",
             updatedAt = "2024-03-21T16:30:00Z",
             creator = mockUser,
-            assignee = mockAdminUser,
-            category = mockCategories[0]
+            assignee = mockAdminUser
         ),
         Ticket(
             id = 4,
@@ -80,8 +77,7 @@ object MockData {
             createdAt = "2024-03-23T08:45:00Z",
             updatedAt = "2024-03-23T08:45:00Z",
             creator = mockUser,
-            assignee = null,
-            category = mockCategories[3]
+            assignee = null
         ),
         Ticket(
             id = 5,
@@ -92,8 +88,7 @@ object MockData {
             createdAt = "2024-03-18T13:20:00Z",
             updatedAt = "2024-03-19T10:15:00Z",
             creator = mockUser,
-            assignee = mockAdminUser,
-            category = mockCategories[1]
+            assignee = mockAdminUser
         ),
         Ticket(
             id = 6,
@@ -104,8 +99,7 @@ object MockData {
             createdAt = "2024-03-21T15:30:00Z",
             updatedAt = "2024-03-22T11:45:00Z",
             creator = mockUser,
-            assignee = mockAdminUser,
-            category = mockCategories[0]
+            assignee = mockAdminUser
         ),
         Ticket(
             id = 7,
@@ -116,8 +110,7 @@ object MockData {
             createdAt = "2024-03-17T09:15:00Z",
             updatedAt = "2024-03-18T14:20:00Z",
             creator = mockUser,
-            assignee = mockAdminUser,
-            category = mockCategories[1]
+            assignee = mockAdminUser
         ),
         Ticket(
             id = 8,
@@ -128,8 +121,7 @@ object MockData {
             createdAt = "2024-03-22T16:00:00Z",
             updatedAt = "2024-03-23T08:30:00Z",
             creator = mockUser,
-            assignee = null,
-            category = mockCategories[3]
+            assignee = null
         )
     )
     
@@ -155,7 +147,7 @@ object MockData {
     }
     
     fun getTicketsForCanceled(): List<Ticket> {
-        return mockTickets.filter { it.status == TicketStatus.CLOSED }
+        return mockTickets.filter { it.status == TicketStatus.CLOSED || it.status == TicketStatus.CANCELED }
     }
     
     fun getUnassignedTickets(): List<Ticket> {

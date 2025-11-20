@@ -15,6 +15,7 @@ class TicketListSerializer(serializers.ModelSerializer):
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
     resolvedAt = serializers.DateTimeField(source='resolved_at', read_only=True)
+    imageUrl = serializers.SerializerMethodField()
     
     creator = UserSerializer(read_only=True)
     assignee = UserSerializer(read_only=True)
@@ -27,6 +28,7 @@ class TicketListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'title',
+            'description',
             'status',
             'displayStatus',
             'priority',
@@ -37,8 +39,21 @@ class TicketListSerializer(serializers.ModelSerializer):
             'updatedAt',
             'resolvedAt',
             'commentsCount',
-            'attachmentsCount'
+            'attachmentsCount',
+            'imageUrl'
         ]
+    
+    def get_imageUrl(self, obj):
+        """Get full URL for ticket image."""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: construir URL con configuración por defecto
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'http://10.0.2.2:8000')
+            return f"{base_url}{obj.image.url}"
+        return None
 
     def get_commentsCount(self, obj):
         """Get count of comments for this ticket."""
@@ -58,6 +73,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
     resolvedAt = serializers.DateTimeField(source='resolved_at', read_only=True)
+    imageUrl = serializers.SerializerMethodField()
     
     creator = UserSerializer(read_only=True)
     assignee = UserSerializer(read_only=True)
@@ -76,8 +92,21 @@ class TicketDetailSerializer(serializers.ModelSerializer):
             'assignee',
             'createdAt',
             'updatedAt',
-            'resolvedAt'
+            'resolvedAt',
+            'imageUrl'
         ]
+    
+    def get_imageUrl(self, obj):
+        """Get full URL for ticket image."""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: construir URL con configuración por defecto
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'http://10.0.2.2:8000')
+            return f"{base_url}{obj.image.url}"
+        return None
 
 
 class TicketCreateSerializer(serializers.ModelSerializer):
@@ -97,10 +126,11 @@ class TicketCreateSerializer(serializers.ModelSerializer):
         choices=Ticket.PRIORITY_CHOICES,
         default='medium'
     )
+    image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'priority']
+        fields = ['title', 'description', 'priority', 'image']
 
     def validate_title(self, value):
         """Validate title."""

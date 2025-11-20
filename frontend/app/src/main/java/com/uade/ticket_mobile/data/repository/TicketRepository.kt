@@ -1,11 +1,23 @@
 package com.uade.ticket_mobile.data.repository
 
+import android.content.Context
 import com.uade.ticket_mobile.data.api.ApiClient
+import com.uade.ticket_mobile.data.local.AppDatabase
+import com.uade.ticket_mobile.data.local.entities.TicketEntity
 import com.uade.ticket_mobile.data.models.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import okhttp3.ResponseBody
 import retrofit2.Response
+import java.io.File
 
-class TicketRepository {
+class TicketRepository(context: Context? = null) {
     private val apiService = ApiClient.apiService
+    private val ticketDao = context?.let { AppDatabase.getDatabase(it).ticketDao() }
     
     suspend fun login(username: String, password: String): Response<UserLoginResponse> {
         return apiService.login(UserLoginRequest(username, password))
@@ -37,7 +49,10 @@ class TicketRepository {
     suspend fun changePassword(token: String, currentPassword: String, newPassword: String): Response<Unit> {
         return apiService.changePassword(
             "Bearer $token",
-            ChangePasswordRequest(currentPassword, newPassword)
+            ChangePasswordRequest(
+                currentPassword = currentPassword,
+                newPassword = newPassword
+            )
         )
     }
     
@@ -51,15 +66,89 @@ class TicketRepository {
         priority: String? = null,
         page: Int = 1
     ): Response<PagedResponse<Ticket>> {
-        return apiService.getTickets("Bearer $token", status, priority, page)
+        val response = apiService.getTickets("Bearer $token", status, priority, page)
+        
+        // Si la respuesta es exitosa, guardar en caché
+        if (response.isSuccessful && response.body() != null) {
+            val tickets = response.body()!!.results
+            ticketDao?.insertTickets(tickets.map { TicketEntity.fromTicket(it) })
+        }
+        
+        return response
+    }
+    
+    /**
+     * Get tickets from local cache (offline mode)
+     */
+    fun getTicketsFromCache(): Flow<List<Ticket>>? {
+        return ticketDao?.getAllTickets()?.map { entities ->
+            entities.map { it.toTicket() }
+        }
+    }
+    
+    /**
+     * Get tickets by status from cache
+     */
+    fun getTicketsFromCacheByStatus(status: String): Flow<List<Ticket>>? {
+        return ticketDao?.getTicketsByStatus(status)?.map { entities ->
+            entities.map { it.toTicket() }
+        }
     }
     
     suspend fun getTicket(token: String, id: Int): Response<Ticket> {
         return apiService.getTicket("Bearer $token", id)
     }
     
-    suspend fun createTicket(token: String, request: TicketCreateRequest): Response<Ticket> {
-        return apiService.createTicket("Bearer $token", request)
+    suspend fun createTicket(
+        token: String,
+        title: String,
+        description: String,
+        priority: String,
+        imageFile: File? = null
+    ): Response<Ticket> {
+        // Crear RequestBody para los campos de texto
+        val titleBody = title.toRequestBody("text/plain".toMediaTypeOrNull())
+        val descriptionBody = description.toRequestBody("text/plain".toMediaTypeOrNull())
+        val priorityBody = priority.toRequestBody("text/plain".toMediaTypeOrNull())
+        
+        // Crear MultipartBody.Part para la imagen (si existe)
+        val imagePart = imageFile?.let {
+            val requestFile = it.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("image", it.name, requestFile)
+        }
+        
+        val response = apiService.createTicket(
+            "Bearer $token",
+            titleBody,
+            descriptionBody,
+            priorityBody,
+            imagePart
+        )
+        
+        // Convertir TicketCreateResponse a Response<Ticket>
+        if (response.isSuccessful && response.body() != null) {
+            val createResponse = response.body()!!
+            var ticket = createResponse.ticket
+            
+            // Asegurar que el ticket tenga un status válido (por defecto OPEN)
+            if (ticket.status == null) {
+                ticket = ticket.copy(status = TicketStatus.OPEN)
+            }
+            
+            // Guardar en caché si fue exitoso
+            ticketDao?.insertTicket(TicketEntity.fromTicket(ticket))
+            
+            // Crear una nueva Response con el ticket extraído
+            // Usar el raw response original pero con el body del ticket
+            val rawResponse = response.raw()
+            return Response.success(ticket, rawResponse)
+        }
+        
+        // Si hay error, retornar error
+        return Response.error(
+            response.code(),
+            response.errorBody() ?: ResponseBody.create(null, response.message() ?: "Error")
+        )
     }
     
     suspend fun updateTicket(token: String, id: Int, request: TicketUpdateRequest): Response<Ticket> {
@@ -67,10 +156,85 @@ class TicketRepository {
     }
     
     suspend fun deleteTicket(token: String, id: Int): Response<Unit> {
-        return apiService.deleteTicket("Bearer $token", id)
+        val response = apiService.deleteTicket("Bearer $token", id)
+        
+        // Eliminar de caché si fue exitoso
+        if (response.isSuccessful) {
+            ticketDao?.deleteTicketById(id)
+        }
+        
+        return response
+    }
+    
+    /**
+     * Clear all cached tickets
+     */
+    suspend fun clearCache() {
+        ticketDao?.deleteAllTickets()
     }
     
     suspend fun getCategories(token: String): Response<List<TicketCategory>> {
         return apiService.getCategories("Bearer $token")
+    }
+    
+    suspend fun getSupportUsers(token: String): Response<PagedResponse<User>> {
+        return apiService.getSupportUsers("Bearer $token")
+    }
+    
+    // Attachments
+    suspend fun getTicketAttachments(token: String, ticketId: Int): Response<AttachmentListResponse> {
+        return apiService.getTicketAttachments("Bearer $token", ticketId)
+    }
+    
+    suspend fun uploadAttachment(
+        token: String,
+        ticketId: Int,
+        file: File,
+        isPrivate: Boolean = false
+    ): Response<AttachmentUploadResponse> {
+        // Detectar MIME type basado en la extensión del archivo
+        val mimeType = when (file.extension.lowercase()) {
+            "pdf" -> "application/pdf"
+            "doc" -> "application/msword"
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "xls" -> "application/vnd.ms-excel"
+            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "txt" -> "text/plain"
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "bmp" -> "image/bmp"
+            "zip" -> "application/zip"
+            "rar" -> "application/x-rar-compressed"
+            "7z" -> "application/x-7z-compressed"
+            else -> "application/octet-stream"
+        }
+        
+        val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
+        val filePart = MultipartBody.Part.createFormData("file", file.name, requestFile)
+        val isPrivateBody = isPrivate.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        
+        return apiService.uploadAttachment("Bearer $token", ticketId, filePart, isPrivateBody)
+    }
+    
+    suspend fun deleteAttachment(token: String, ticketId: Int, attachmentId: Int): Response<Unit> {
+        return apiService.deleteAttachment("Bearer $token", ticketId, attachmentId)
+    }
+    
+    // Metrics methods
+    suspend fun getTicketsOverview(token: String): Response<TicketsOverviewResponse> {
+        return apiService.getTicketsOverview("Bearer $token")
+    }
+    
+    suspend fun getTicketsPerformance(token: String): Response<TicketsPerformanceResponse> {
+        return apiService.getTicketsPerformance("Bearer $token")
+    }
+    
+    suspend fun getUsersActivity(token: String): Response<UsersActivityResponse> {
+        return apiService.getUsersActivity("Bearer $token")
+    }
+    
+    suspend fun getSystemHealth(token: String): Response<SystemHealthResponse> {
+        return apiService.getSystemHealth("Bearer $token")
     }
 }

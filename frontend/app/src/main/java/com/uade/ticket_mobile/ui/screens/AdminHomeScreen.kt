@@ -7,8 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +43,7 @@ fun AdminHomeScreen(
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
     
-    val tabTitles = listOf("Asignar", "Pendientes", "Completados", "Cancelados")
+    val tabTitles = listOf("Pendientes", "Completados", "Cancelados")
     
     LaunchedEffect(Unit) {
         viewModel.loadTickets()
@@ -54,15 +52,10 @@ fun AdminHomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Home Admin- Sin asignar") },
+                title = { Text("Home Admin") },
                 navigationIcon = {
                     IconButton(onClick = { showMenu = !showMenu }) {
                         Icon(Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO: Implementar filtros */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -79,26 +72,14 @@ fun AdminHomeScreen(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Vista Observador y Usuario actual
+                // Usuario actual
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = "Vista",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Vista Observador",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-                    
                     // Avatar y nombre del admin
                     Box(
                         modifier = Modifier
@@ -122,7 +103,7 @@ fun AdminHomeScreen(
                     )
                 }
                 
-                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                 
                 // Tabs para filtrar por estado
                 TabRow(
@@ -138,9 +119,8 @@ fun AdminHomeScreen(
                                 .background(
                                     when (index) {
                                         0 -> if (selectedTabIndex == 0) AccentOrange.copy(alpha = 0.1f) else Color.Transparent
-                                        1 -> if (selectedTabIndex == 1) AccentOrange.copy(alpha = 0.1f) else Color.Transparent
-                                        2 -> if (selectedTabIndex == 2) SuccessGreen.copy(alpha = 0.1f) else Color.Transparent
-                                        3 -> if (selectedTabIndex == 3) ErrorRed.copy(alpha = 0.1f) else Color.Transparent
+                                        1 -> if (selectedTabIndex == 1) SuccessGreen.copy(alpha = 0.1f) else Color.Transparent
+                                        2 -> if (selectedTabIndex == 2) ErrorRed.copy(alpha = 0.1f) else Color.Transparent
                                         else -> Color.Transparent
                                     }
                                 )
@@ -150,9 +130,8 @@ fun AdminHomeScreen(
                                 modifier = Modifier.padding(16.dp),
                                 color = when (index) {
                                     0 -> if (selectedTabIndex == 0) AccentOrange else MaterialTheme.colorScheme.onBackground
-                                    1 -> if (selectedTabIndex == 1) AccentOrange else MaterialTheme.colorScheme.onBackground
-                                    2 -> if (selectedTabIndex == 2) SuccessGreen else MaterialTheme.colorScheme.onBackground
-                                    3 -> if (selectedTabIndex == 3) ErrorRed else MaterialTheme.colorScheme.onBackground
+                                    1 -> if (selectedTabIndex == 1) SuccessGreen else MaterialTheme.colorScheme.onBackground
+                                    2 -> if (selectedTabIndex == 2) ErrorRed else MaterialTheme.colorScheme.onBackground
                                     else -> MaterialTheme.colorScheme.onBackground
                                 },
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
@@ -171,12 +150,11 @@ fun AdminHomeScreen(
                     }
                 } else {
                     val filteredTickets = when (selectedTabIndex) {
-                        0 -> tickets.filter { it.assignee == null } // Sin asignar
-                        1 -> tickets.filter { 
-                            it.status == TicketStatus.OPEN || it.status == TicketStatus.IN_PROGRESS 
+                        0 -> tickets.filter { 
+                            it.safeStatus == TicketStatus.OPEN || it.safeStatus == TicketStatus.IN_PROGRESS 
                         } // Pendientes
-                        2 -> tickets.filter { it.status == TicketStatus.RESOLVED } // Completados
-                        3 -> tickets.filter { it.status == TicketStatus.CLOSED } // Cancelados
+                        1 -> tickets.filter { it.safeStatus == TicketStatus.RESOLVED } // Completados
+                        2 -> tickets.filter { it.safeStatus == TicketStatus.CLOSED } // Cancelados
                         else -> tickets
                     }
                     
@@ -219,25 +197,6 @@ fun AdminHomeScreen(
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
-                        // Opción Vista Observador
-                        TextButton(
-                            onClick = { showMenu = false },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    Icons.Default.Person,
-                                    contentDescription = "Vista",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text("Vista Observador")
-                            }
-                        }
-                        
                         // Opción Usuarios
                         TextButton(
                             onClick = {
@@ -357,25 +316,19 @@ fun AdminTicketCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            // Botones de acción
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Ver",
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    "✏️",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            // Usuario asignado
+            ticket.assignee?.let { assignee ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Asignado a: ${assignee.firstName} ${assignee.lastName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }

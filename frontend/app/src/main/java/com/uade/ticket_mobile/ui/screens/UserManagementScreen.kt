@@ -223,7 +223,9 @@ fun UserCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = user.firstName?.firstOrNull()?.toString()?.uppercase() ?: user.username.first().toString().uppercase(),
+                    text = user.firstName?.firstOrNull()?.toString()?.uppercase() 
+                        ?: user.username?.firstOrNull()?.toString()?.uppercase()
+                        ?: user.email.first().toString().uppercase(),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
@@ -235,7 +237,7 @@ fun UserCard(
             // Información del usuario
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${user.firstName ?: ""} ${user.lastName ?: ""}".trim().ifEmpty { user.username },
+                    text = "${user.firstName ?: ""} ${user.lastName ?: ""}".trim().ifEmpty { user.username ?: user.email },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

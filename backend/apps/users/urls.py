@@ -9,6 +9,9 @@ urlpatterns = [
     path('users/profile/', views.get_user_profile_view, name='user-profile'),
     path('users/profile/update/', views.update_user_profile_view, name='user-profile-update'),
     
+    # Support users endpoint (for ticket assignment)
+    path('users/support/', views.get_support_users_view, name='support-users-list'),
+    
     # Admin user management endpoints
     path('users/', views.list_users_view, name='users-list'),
     path('users/<int:user_id>/', views.get_user_detail_view, name='user-detail'),

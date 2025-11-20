@@ -171,25 +171,6 @@ fun LoginScreen(
             style = MaterialTheme.typography.bodyMedium
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Link "REGISTRARSE"
-        ClickableText(
-            text = buildAnnotatedString {
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.tertiary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                ) {
-                    append("REGISTRARSE")
-                }
-            },
-            onClick = { onNavigateToRegister() },
-            style = MaterialTheme.typography.bodyMedium
-        )
-        
         // Mostrar errores
         uiState.error?.let { error ->
             Spacer(modifier = Modifier.height(16.dp))

@@ -4,25 +4,28 @@ import com.google.gson.annotations.SerializedName
 
 data class User(
     val id: Int,
-    val username: String,
+    val username: String? = null,
     val email: String,
-    @SerializedName("first_name")
+    @SerializedName("firstName")
     val firstName: String?,
-    @SerializedName("last_name")
+    @SerializedName("lastName")
     val lastName: String?,
-    @SerializedName("is_staff")
+    @SerializedName("isStaff")
     val isStaff: Boolean = false,
-    @SerializedName("is_superuser")
-    val isSuperuser: Boolean = false
+    @SerializedName("isSuperuser")
+    val isSuperuser: Boolean = false,
+    val role: String? = null
 )
 
 data class UserLoginRequest(
-    val username: String,
+    val email: String,
     val password: String
 )
 
 data class UserLoginResponse(
+    @SerializedName("accessToken")
     val access: String,
+    @SerializedName("refreshToken")
     val refresh: String,
     val user: User
 )
@@ -31,9 +34,9 @@ data class UserRegisterRequest(
     val username: String,
     val email: String,
     val password: String,
-    @SerializedName("first_name")
+    @SerializedName("firstName")
     val firstName: String,
-    @SerializedName("last_name")
+    @SerializedName("lastName")
     val lastName: String
 )
 
@@ -42,16 +45,16 @@ data class PasswordResetRequest(
 )
 
 data class UpdateProfileRequest(
-    @SerializedName("first_name")
+    @SerializedName("firstName")
     val firstName: String,
-    @SerializedName("last_name")
+    @SerializedName("lastName")
     val lastName: String,
     val email: String
 )
 
 data class ChangePasswordRequest(
-    @SerializedName("old_password")
-    val oldPassword: String,
-    @SerializedName("new_password")
+    @SerializedName("currentPassword")
+    val currentPassword: String,
+    @SerializedName("newPassword")
     val newPassword: String
 )

@@ -101,6 +101,14 @@ def create_ticket_view(request):
     if serializer.is_valid():
         ticket = serializer.save()
         
+        # Auto-asignar a un usuario de soporte aleatorio
+        from apps.users.models import User
+        import random
+        soportes = User.objects.filter(role='support', is_active=True)
+        if soportes.exists():
+            ticket.assignee = random.choice(soportes)
+            ticket.save()
+        
         # Return detailed ticket data
         ticket_data = TicketDetailSerializer(ticket).data
         

@@ -1,0 +1,28 @@
+{
+  "_comment": "Este es un archivo de ejemplo. Necesitas crear un proyecto en Firebase Console",
+  "_instructions": [
+    "1. Ve a https://console.firebase.google.com/",
+    "2. Crea un nuevo proyecto o usa uno existente",
+    "3. Agrega una app Android con package name: com.uade.ticket_mobile",
+    "4. Descarga el archivo google-services.json",
+    "5. Renombra este archivo a google-services.json.example",
+    "6. Coloca el archivo descargado como google-services.json en esta carpeta",
+    "7. El archivo google-services.json está en .gitignore por seguridad"
+  ],
+  "project_info": {
+    "project_number": "YOUR_PROJECT_NUMBER",
+    "project_id": "ticket-mobile",
+    "storage_bucket": "ticket-mobile.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "YOUR_APP_ID",
+        "android_client_info": {
+          "package_name": "com.uade.ticket_mobile"
+        }
+      }
+    }
+  ]
+}
+

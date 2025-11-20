@@ -3,25 +3,16 @@ package com.uade.ticket_mobile.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.uade.ticket_mobile.ui.screens.MockInfoScreen
-import com.uade.ticket_mobile.ui.screens.LoginScreen
-import com.uade.ticket_mobile.ui.screens.RegisterScreen
-import com.uade.ticket_mobile.ui.screens.ForgotPasswordScreen
-import com.uade.ticket_mobile.ui.screens.TicketListScreen
-import com.uade.ticket_mobile.ui.screens.CreateTicketScreen
-import com.uade.ticket_mobile.ui.screens.ProfileScreen
-import com.uade.ticket_mobile.ui.screens.ChangePasswordScreen
-import com.uade.ticket_mobile.ui.screens.AdminHomeScreen
-import com.uade.ticket_mobile.ui.screens.UserManagementScreen
-import com.uade.ticket_mobile.ui.screens.StatisticsScreen
-import com.uade.ticket_mobile.ui.screens.TicketDetailsScreen
-import com.uade.ticket_mobile.ui.screens.EditTicketScreen
+import com.uade.ticket_mobile.ui.screens.*
 import com.uade.ticket_mobile.ui.viewmodel.TicketViewModel
+import com.uade.ticket_mobile.utils.PreferencesManager
 
 @Composable
 fun AppNavigation(
@@ -29,17 +20,35 @@ fun AppNavigation(
     viewModel: TicketViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val prefsManager = remember { PreferencesManager(context) }
     
-    // Para mockup, iniciamos con información del demo
+    // TEMPORAL: Forzar onboarding para testing (comentar esta línea en producción)
+    prefsManager.resetOnboarding()
+    
+    // Leer el estado del onboarding directamente cada vez (sin cache)
+    // Si el valor no existe, devuelve false (mostrar onboarding)
+    val isOnboardingCompleted = prefsManager.isOnboardingCompleted()
+    
+    // Determinar pantalla inicial basada en el estado actual
+    // Por defecto siempre mostrar onboarding a menos que esté explícitamente completado
+    val startDestination = if (isOnboardingCompleted) {
+        "login"
+    } else {
+        "onboarding"
+    }
+    
     NavHost(
         navController = navController,
-        startDestination = "mock_info"
+        startDestination = startDestination
     ) {
-        composable("mock_info") {
-            MockInfoScreen(
-                onContinue = {
+        // Onboarding (primera vez)
+        composable("onboarding") {
+            OnboardingScreen(
+                onFinish = {
+                    prefsManager.setOnboardingCompleted(true)
                     navController.navigate("login") {
-                        popUpTo("mock_info") { inclusive = true }
+                        popUpTo("onboarding") { inclusive = true }
                     }
                 }
             )
@@ -184,6 +193,7 @@ fun AppNavigation(
         
         composable("statistics") {
             StatisticsScreen(
+                ticketViewModel = viewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
@@ -202,7 +212,8 @@ fun AppNavigation(
                 },
                 onEditTicket = { ticketToEdit ->
                     navController.navigate("edit_ticket/${ticketToEdit.id}")
-                }
+                },
+                viewModel = viewModel
             )
         }
         
@@ -217,9 +228,9 @@ fun AppNavigation(
                     navController.popBackStack()
                 },
                 onSaveChanges = { updatedTicket ->
-                    // TODO: Implementar actualización del ticket en el ViewModel
                     navController.popBackStack()
-                }
+                },
+                viewModel = viewModel
             )
         }
     }

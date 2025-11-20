@@ -17,11 +17,14 @@ class UserSerializer(serializers.ModelSerializer):
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     lastLogin = serializers.DateTimeField(source='last_login', read_only=True)
     isActive = serializers.BooleanField(source='is_active', read_only=True)
+    isStaff = serializers.BooleanField(source='is_staff', read_only=True)
+    isSuperuser = serializers.BooleanField(source='is_superuser', read_only=True)
 
     class Meta:
         model = User
         fields = [
             'id',
+            'username',
             'email',
             'firstName',
             'lastName',
@@ -31,9 +34,11 @@ class UserSerializer(serializers.ModelSerializer):
             'profilePicture',
             'createdAt',
             'lastLogin',
-            'isActive'
+            'isActive',
+            'isStaff',
+            'isSuperuser'
         ]
-        read_only_fields = ['id', 'email', 'createdAt']
+        read_only_fields = ['id', 'username', 'email', 'createdAt']
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -106,6 +111,7 @@ class UserListSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id',
+            'username',
             'email',
             'firstName',
             'lastName',

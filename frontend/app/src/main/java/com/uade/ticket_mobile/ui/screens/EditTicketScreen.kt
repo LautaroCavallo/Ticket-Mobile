@@ -1,5 +1,6 @@
 package com.uade.ticket_mobile.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,37 +11,54 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uade.ticket_mobile.data.models.Ticket
 import com.uade.ticket_mobile.data.models.TicketPriority
 import com.uade.ticket_mobile.data.models.TicketStatus
-import com.uade.ticket_mobile.data.mock.MockData
+import com.uade.ticket_mobile.data.models.TicketUpdateRequest
+import com.uade.ticket_mobile.data.models.User
+import com.uade.ticket_mobile.ui.viewmodel.TicketViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTicketScreen(
     ticket: Ticket,
     onNavigateBack: () -> Unit,
-    onSaveChanges: (Ticket) -> Unit
+    onSaveChanges: (Ticket) -> Unit,
+    viewModel: TicketViewModel = viewModel()
 ) {
-    var selectedAssignee by remember { mutableStateOf(ticket.assignee?.let { "${it.firstName} ${it.lastName}".trim() } ?: "Juan Pérez") }
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+    val users by viewModel.users.collectAsState()
+    
+    // Cargar usuarios de soporte al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.loadUsers()
+    }
+    
+    // Los usuarios ya vienen filtrados por support desde el backend
+    val supportUsers = users
+    
     var selectedPriority by remember { mutableStateOf(ticket.priority) }
-    var selectedStatus by remember { mutableStateOf(ticket.status) }
-    var description by remember { mutableStateOf(ticket.description) }
+    var selectedStatus by remember { mutableStateOf(ticket.safeStatus) }
+    var description by remember { mutableStateOf(ticket.description ?: "") }
+    var selectedAssignee by remember { mutableStateOf<User?>(ticket.assignee) }
     
     var showAssigneeDropdown by remember { mutableStateOf(false) }
     var showPriorityDropdown by remember { mutableStateOf(false) }
     var showStatusDropdown by remember { mutableStateOf(false) }
     
-    val assigneeOptions = MockData.allUsers.map { "${it.firstName} ${it.lastName}".trim() }
     val priorityOptions = TicketPriority.values().toList()
     val statusOptions = listOf(
         TicketStatus.OPEN,
         TicketStatus.IN_PROGRESS,
         TicketStatus.RESOLVED,
-        TicketStatus.CLOSED
+        TicketStatus.CLOSED,
+        TicketStatus.CANCELED
     )
     
     Scaffold(
@@ -84,7 +102,7 @@ fun EditTicketScreen(
                     onExpandedChange = { showAssigneeDropdown = !showAssigneeDropdown }
                 ) {
                     OutlinedTextField(
-                        value = selectedAssignee,
+                        value = selectedAssignee?.let { "${it.firstName ?: ""} ${it.lastName ?: ""}".trim() } ?: "Sin asignar",
                         onValueChange = { },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -93,10 +111,7 @@ fun EditTicketScreen(
                         trailingIcon = {
                             Icon(
                                 Icons.Default.ArrowDropDown,
-                                contentDescription = "Dropdown",
-                                modifier = Modifier.then(
-                                    if (showAssigneeDropdown) Modifier else Modifier
-                                )
+                                contentDescription = "Dropdown"
                             )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
@@ -109,11 +124,11 @@ fun EditTicketScreen(
                         expanded = showAssigneeDropdown,
                         onDismissRequest = { showAssigneeDropdown = false }
                     ) {
-                        assigneeOptions.forEach { assignee ->
+                        supportUsers.forEach { user ->
                             DropdownMenuItem(
-                                text = { Text(assignee) },
+                                text = { Text("${user.firstName ?: ""} ${user.lastName ?: ""}".trim()) },
                                 onClick = {
-                                    selectedAssignee = assignee
+                                    selectedAssignee = user
                                     showAssigneeDropdown = false
                                 }
                             )
@@ -206,6 +221,7 @@ fun EditTicketScreen(
                             TicketStatus.IN_PROGRESS -> "En proceso"
                             TicketStatus.RESOLVED -> "Resuelto"
                             TicketStatus.CLOSED -> "Cerrado"
+                            TicketStatus.CANCELED -> "Cancelado"
                         },
                         onValueChange = { },
                         modifier = Modifier
@@ -236,6 +252,7 @@ fun EditTicketScreen(
                                         TicketStatus.IN_PROGRESS -> "En proceso"
                                         TicketStatus.RESOLVED -> "Resuelto"
                                         TicketStatus.CLOSED -> "Cerrado"
+                                        TicketStatus.CANCELED -> "Cancelado"
                                     })
                                 },
                                 onClick = {
@@ -262,7 +279,7 @@ fun EditTicketScreen(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    placeholder = { Text("Cambiar mouse en rrhh") },
+                    placeholder = { Text("Descripción del ticket") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
@@ -283,7 +300,8 @@ fun EditTicketScreen(
             ) {
                 TextButton(
                     onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = !uiState.isLoading
                 ) {
                     Text(
                         text = "CANCELAR",
@@ -294,23 +312,45 @@ fun EditTicketScreen(
                 
                 Button(
                     onClick = {
-                        val updatedTicket = ticket.copy(
-                            priority = selectedPriority,
-                            status = selectedStatus,
-                            description = description
+                        val updateRequest = TicketUpdateRequest(
+                            title = ticket.title,
+                            description = description,
+                            priority = selectedPriority.name.lowercase(),
+                            status = selectedStatus.name.lowercase(),
+                            assigneeId = selectedAssignee?.id
                         )
-                        onSaveChanges(updatedTicket)
+                        
+                        viewModel.updateTicket(
+                            ticketId = ticket.id,
+                            request = updateRequest,
+                            onSuccess = {
+                                Toast.makeText(context, "Ticket actualizado exitosamente", Toast.LENGTH_SHORT).show()
+                                onNavigateBack()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            }
+                        )
                     },
                     modifier = Modifier.weight(1f),
+                    enabled = !uiState.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Text(
-                        text = "Guardar Cambios",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Guardar Cambios",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

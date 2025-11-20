@@ -1,16 +1,19 @@
 package com.uade.ticket_mobile.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.uade.ticket_mobile.data.models.*
 import com.uade.ticket_mobile.data.repository.TicketRepository
+import com.uade.ticket_mobile.utils.AnalyticsManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class TicketViewModel : ViewModel() {
-    private val repository = TicketRepository()
+class TicketViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = TicketRepository(application)
+    private val analytics = AnalyticsManager(application)
     
     private val _uiState = MutableStateFlow(TicketUiState())
     val uiState: StateFlow<TicketUiState> = _uiState.asStateFlow()

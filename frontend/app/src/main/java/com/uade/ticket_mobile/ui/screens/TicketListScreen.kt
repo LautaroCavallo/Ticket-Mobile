@@ -59,17 +59,34 @@ fun TicketListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tickets") },
+                title = { 
+                    Text(
+                        "Tickets",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = { showMenu = !showMenu }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        Icon(
+                            Icons.Default.Menu, 
+                            contentDescription = "Menu",
+                            tint = Color.White
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { /* TODO: Implementar filtros */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                        Icon(
+                            Icons.Default.MoreVert, 
+                            contentDescription = "Opciones",
+                            tint = Color.White
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF5E35B1) // Color azul/morado
+                )
             )
         },
         floatingActionButton = {

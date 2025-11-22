@@ -1,1 +1,0 @@
-https://www.figma.com/design/8rZOHQGTVzhQjX5wDMgsJz/Desarrollo-de-aplicaciones-1?node-id=40-3231&t=FwHCvfY7O4uw3sP6-1

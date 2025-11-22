@@ -63,10 +63,20 @@ fun StatisticsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Estadísticas") },
+                title = { 
+                    Text(
+                        "Estadísticas",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
                     }
                 },
                 actions = {
@@ -75,11 +85,15 @@ fun StatisticsScreen(
                             metricsViewModel.loadAllMetrics(token)
                         }
                     }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
+                        Icon(
+                            Icons.Default.Refresh, 
+                            contentDescription = "Actualizar",
+                            tint = Color.White
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color(0xFF5E35B1) // Color azul/morado
                 )
             )
         }

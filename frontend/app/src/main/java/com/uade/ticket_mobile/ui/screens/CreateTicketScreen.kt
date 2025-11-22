@@ -154,15 +154,24 @@ fun CreateTicketScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Crear Ticket") },
+                title = { 
+                    Text(
+                        "Crear Ticket",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = Color(0xFF5E35B1) // Color azul/morado
                 )
             )
         },

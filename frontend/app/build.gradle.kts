@@ -3,6 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp") version "2.0.21-1.0.25"
+    
+    // CI/CD Plugins
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.6"
+    id("jacoco")
 }
 
 android {
@@ -37,6 +42,18 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    
+    // Configuración de Android Lint
+    lint {
+        abortOnError = false
+        ignoreWarnings = false
+        warningsAsErrors = false
+        checkReleaseBuilds = true
+        htmlReport = true
+        xmlReport = true
+        htmlOutput = file("$buildDir/reports/lint-results.html")
+        xmlOutput = file("$buildDir/reports/lint-results.xml")
     }
 }
 
@@ -102,4 +119,96 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+// ============================================
+// CI/CD Configurations
+// ============================================
+
+// Ktlint Configuration
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    version.set("1.1.1")
+    android.set(true)
+    ignoreFailures.set(false)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.HTML)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+    }
+    filter {
+        exclude("**/generated/**")
+        include("**/kotlin/**")
+    }
+}
+
+// Detekt Configuration
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom(files("$rootDir/../detekt-config.yml"))
+    baseline = file("detekt-baseline.xml")
+    
+    reports {
+        html {
+            required.set(true)
+            outputLocation.set(file("$buildDir/reports/detekt/detekt.html"))
+        }
+        xml {
+            required.set(true)
+            outputLocation.set(file("$buildDir/reports/detekt/detekt.xml"))
+        }
+        txt {
+            required.set(true)
+            outputLocation.set(file("$buildDir/reports/detekt/detekt.txt"))
+        }
+    }
+}
+
+// JaCoCo Configuration
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        xml.outputLocation.set(file("$buildDir/reports/jacoco/jacocoTestReport.xml"))
+        html.outputLocation.set(file("$buildDir/reports/jacoco/jacocoTestReport"))
+    }
+    
+    val fileFilter = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/**/*.*",
+        "**/data/models/**",
+        "**/di/**",
+        "**/ui/theme/**"
+    )
+    
+    val debugTree = fileTree("${buildDir}/tmp/kotlin-classes/debug") {
+        exclude(fileFilter)
+    }
+    
+    val mainSrc = "${project.projectDir}/src/main/java"
+    
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(fileTree(buildDir) {
+        include("jacoco/testDebugUnitTest.exec")
+    })
+}
+
+// Task para ejecutar todos los checks de calidad
+tasks.register("qualityCheck") {
+    dependsOn(
+        "ktlintCheck",
+        "detekt",
+        "lintDebug",
+        "testDebugUnitTest",
+        "jacocoTestReport"
+    )
+    
+    group = "verification"
+    description = "Ejecuta todos los checks de calidad de código (ktlint, detekt, lint, tests, coverage)"
 }

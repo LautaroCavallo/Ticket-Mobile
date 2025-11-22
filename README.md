@@ -1,5 +1,7 @@
 # Sistema de Gestión de Tickets
 
+![Android CI](https://github.com/facundocores/Ticket-Mobile/workflows/Android%20CI/badge.svg)
+
 ## Descripción
 Este proyecto es un **sistema de gestión de tickets** desarrollado en el marco de la materia *Desarrollo de Aplicaciones I* (UADE, 2025).  
 Permite a los usuarios reportar incidencias, a los agentes de soporte gestionarlas y a los administradores supervisar el proceso.
@@ -152,6 +154,7 @@ Ver [frontend/README.md](frontend/README.md) para más detalles.
 
 ## 📚 Documentación Adicional
 
+- **[🔄 CI/CD Documentation](CI-CD.md)** - Integración y Despliegue Continuo
 - **[API Implementation](backend/IMPLEMENTATION.md)** - Documentación técnica completa de la API
 - **[Quick Start Guide](backend/QUICKSTART.md)** - Guía rápida para ejecutar la API
 - **[Arquitectura del Sistema](docs/arquitectura-final.md)** - Arquitectura completa
